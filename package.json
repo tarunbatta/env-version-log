@@ -1,0 +1,37 @@
+{
+  "name": "version-looker",
+  "version": "1.0.0",
+  "description": "A simple version tracking utility for single-page applications",
+  "main": "dist/index.js",
+  "types": "dist/index.d.ts",
+  "scripts": {
+    "build": "tsc",
+    "prepare": "npm run build",
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/tarunbatta/version-looker.git"
+  },
+  "keywords": [
+    "version",
+    "tracking",
+    "spa",
+    "react",
+    "typescript"
+  ],
+  "author": "",
+  "license": "MIT",
+  "bugs": {
+    "url": "https://github.com/tarunbatta/version-looker/issues"
+  },
+  "homepage": "https://github.com/tarunbatta/version-looker#readme",
+  "devDependencies": {
+    "@types/node": "^20.11.24",
+    "tslib": "^2.6.2",
+    "typescript": "^5.3.3"
+  },
+  "files": [
+    "dist"
+  ]
+}
