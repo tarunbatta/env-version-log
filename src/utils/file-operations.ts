@@ -1,12 +1,12 @@
-import * as fs from "fs";
-import * as path from "path";
-import { PackageJson } from "../types/packagejson";
-import { Logger } from "./logger";
+import * as fs from 'fs';
+import * as path from 'path';
+import { PackageJson } from '../types/packagejson';
+import { Logger } from './logger';
 import {
   PackageJsonNotFoundError,
   PackageJsonReadError,
   PackageJsonWriteError,
-} from "../types/errors";
+} from '../types/errors';
 
 /**
  * Utility class for file operations related to package.json
@@ -22,7 +22,7 @@ export class FileOperations {
     let depth = 0;
 
     while (depth < maxDepth) {
-      const packageJsonPath = path.join(currentDir, "package.json");
+      const packageJsonPath = path.join(currentDir, 'package.json');
       if (fs.existsSync(packageJsonPath)) {
         return packageJsonPath;
       }
@@ -30,7 +30,7 @@ export class FileOperations {
       depth++;
     }
 
-    Logger.error("Could not find package.json");
+    Logger.error('Could not find package.json');
     throw new PackageJsonNotFoundError();
   }
 
@@ -40,11 +40,12 @@ export class FileOperations {
    */
   static readPackageJson(packageJsonPath: string): PackageJson {
     try {
-      const packageJsonContent = fs.readFileSync(packageJsonPath, "utf-8");
+      const packageJsonContent = fs.readFileSync(packageJsonPath, 'utf-8');
       return JSON.parse(packageJsonContent);
-    } catch (error: any) {
-      Logger.error("Failed to read package.json:", error.message);
-      throw new PackageJsonReadError(error.message);
+    } catch (error: unknown) {
+      const errorMessage = error instanceof Error ? error.message : 'Unknown error';
+      Logger.error('Failed to read package.json:', errorMessage);
+      throw new PackageJsonReadError(errorMessage);
     }
   }
 
@@ -54,10 +55,11 @@ export class FileOperations {
    */
   static writePackageJson(packageJsonPath: string, pkg: PackageJson): void {
     try {
-      fs.writeFileSync(packageJsonPath, JSON.stringify(pkg, null, 2) + "\n");
-    } catch (error: any) {
-      Logger.error("Failed to write package.json:", error.message);
-      throw new PackageJsonWriteError(error.message);
+      fs.writeFileSync(packageJsonPath, JSON.stringify(pkg, null, 2) + '\n');
+    } catch (error: unknown) {
+      const errorMessage = error instanceof Error ? error.message : 'Unknown error';
+      Logger.error('Failed to write package.json:', errorMessage);
+      throw new PackageJsonWriteError(errorMessage);
     }
   }
 }

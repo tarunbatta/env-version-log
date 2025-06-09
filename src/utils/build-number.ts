@@ -8,7 +8,7 @@ export class BuildNumberUtils {
   static getNextBuildNumber(currentBuildNumber: string): string {
     const num = parseInt(currentBuildNumber, 10);
     if (isNaN(num)) {
-      return "1";
+      return '1';
     }
     return (num + 1).toString();
   }
@@ -18,6 +18,6 @@ export class BuildNumberUtils {
    */
   static generateTimestampBuildNumber(): string {
     const now = new Date();
-    return now.toISOString().replace(/[-:]/g, "").split(".")[0] + "Z";
+    return now.toISOString().replace(/[-:]/g, '').split('.')[0] + 'Z';
   }
 }

@@ -24,4 +24,17 @@ yarn-error.log*
 
 # OS
 .DS_Store
-Thumbs.db 
+Thumbs.db
+
+# Testing
+coverage/
+.nyc_output/
+
+# Build
+build/
+out/
+
+# Cache
+.cache/
+.npm/
+.eslintcache 

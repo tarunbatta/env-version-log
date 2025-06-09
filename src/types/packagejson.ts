@@ -2,5 +2,5 @@ export interface PackageJson {
   name: string;
   version: string;
   buildNumber?: string;
-  [key: string]: any;
+  [key: string]: unknown;
 }
