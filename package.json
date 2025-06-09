@@ -1,5 +1,5 @@
 {
-  "name": "version-stamper",
+  "name": "env-version-log",
   "version": "1.0.4",
   "description": "A lightweight, zero-configuration version tracking utility for JavaScript/TypeScript applications",
   "main": "dist/index.js",
@@ -7,10 +7,9 @@
   "scripts": {
     "test": "jest",
     "test:watch": "jest --watch",
-    "test:coverage": "node --max-old-space-size=512 --expose-gc node_modules/.bin/jest --ci --maxWorkers=1 --maxConcurrency=1 --coverage --silent",
-    "test:utils": "node --max-old-space-size=512 --expose-gc node_modules/.bin/jest __tests__/utils.test.ts --ci --maxWorkers=1 --maxConcurrency=1 --coverage --silent",
-    "test:version": "node --max-old-space-size=512 --expose-gc node_modules/.bin/jest __tests__/version-tracker.test.ts --ci --maxWorkers=1 --maxConcurrency=1 --coverage --silent",
-    "test:logger": "node --max-old-space-size=512 --expose-gc node_modules/.bin/jest __tests__/logger.test.ts --ci --maxWorkers=1 --maxConcurrency=1 --coverage --silent",
+    "test:utils": "node --max-old-space-size=512 --expose-gc node_modules/.bin/jest __tests__/utils.test.ts --ci --maxWorkers=1 --maxConcurrency=1",
+    "test:version": "node --max-old-space-size=512 --expose-gc node_modules/.bin/jest __tests__/version-tracker.test.ts --ci --maxWorkers=1 --maxConcurrency=1",
+    "test:logger": "node --max-old-space-size=512 --expose-gc node_modules/.bin/jest __tests__/logger.test.ts --ci --maxWorkers=1 --maxConcurrency=1",
     "build": "npm run test:utils && npm run test:version && npm run test:logger && tsc",
     "start": "node dist/index.js",
     "dev": "ts-node src/index.ts",
@@ -24,7 +23,7 @@
   },
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/tarunbatta/version-stamper.git"
+    "url": "git+https://github.com/tarunbatta/env-version-log.git"
   },
   "keywords": [
     "version",
@@ -39,9 +38,9 @@
   "author": "Tarun Batta",
   "license": "MIT",
   "bugs": {
-    "url": "https://github.com/tarunbatta/version-stamper/issues"
+    "url": "https://github.com/tarunbatta/env-version-log/issues"
   },
-  "homepage": "https://github.com/tarunbatta/version-stamper#readme",
+  "homepage": "https://github.com/tarunbatta/env-version-log#readme",
   "devDependencies": {
     "@types/jest": "^29.5.14",
     "@types/node": "^20.11.24",

@@ -1,4 +1,4 @@
-# Version Stamper
+# env-version-log
 
 A lightweight, zero-configuration version tracking utility for JavaScript/TypeScript applications. Automatically manages version numbers and build numbers in your application.
 
@@ -15,13 +15,13 @@ A lightweight, zero-configuration version tracking utility for JavaScript/TypeSc
 ## Installation
 
 ```bash
-npm install version-stamper
+npm install env-version-log
 ```
 
 ## Quick Start
 
 ```typescript
-import { VersionTracker } from 'version-stamper';
+import { VersionTracker } from 'env-version-log';
 
 // Initialize the tracker
 const tracker = VersionTracker.initialize();
