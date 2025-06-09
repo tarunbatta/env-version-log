@@ -1,10 +1,5 @@
 import { VersionInfo } from './types/versioninfo';
-import { FileOperations } from './utils/file-operations';
-import { BuildNumberUtils } from './utils/build-number';
 import { Logger } from './utils/logger';
-import { PackageJsonReadError } from './types/errors';
-import * as fs from 'fs';
-import * as path from 'path';
 
 /**
  * Main class for version and build tracking
@@ -12,72 +7,26 @@ import * as path from 'path';
 export class VersionTracker {
   private static instance: VersionTracker;
   private versionInfo: VersionInfo;
-  private packageJsonPath: string;
 
-  private constructor(config: Partial<VersionInfo> = {}, packageJsonPath?: string) {
-    this.packageJsonPath = packageJsonPath || FileOperations.findPackageJson();
+  private constructor(config: Partial<VersionInfo> = {}) {
     this.versionInfo = {
-      appName: '',
-      version: '0.0.0',
-      buildNumber: '1',
+      appName: config.appName || 'Unknown App',
+      version: config.version || '0.0.0',
+      buildNumber: config.buildNumber || '1',
       environment: process.env.NODE_ENV || config.environment || 'development',
-      lastDeployed: new Date().toISOString(),
+      lastUpdated: new Date().toISOString(),
     };
   }
 
   /**
    * Initializes the VersionTracker singleton
    */
-  public static async initialize(
-    config: Partial<VersionInfo> = {},
-    packageJsonPath?: string
-  ): Promise<VersionTracker> {
+  public static async initialize(config: Partial<VersionInfo> = {}): Promise<VersionTracker> {
     if (!VersionTracker.instance) {
-      VersionTracker.instance = new VersionTracker(config, packageJsonPath);
-      await VersionTracker.instance.loadPackageJson(config);
+      VersionTracker.instance = new VersionTracker(config);
+      Logger.info(VersionTracker.instance.versionInfo);
     }
     return VersionTracker.instance;
-  }
-
-  /**
-   * Loads package.json data and updates version info
-   */
-  private async loadPackageJson(config: Partial<VersionInfo>): Promise<void> {
-    try {
-      const pkg = await FileOperations.readPackageJsonAsync(this.packageJsonPath);
-
-      // Get version from environment variable, package.json, or config
-      const versionFromEnv = process.env.APP_VERSION;
-      const version = versionFromEnv || pkg.version || config.version || '0.0.0';
-
-      // Get build number from environment variable, package.json, or config
-      const buildNumberFromEnv = process.env.BUILD_NUMBER;
-      const buildNumber =
-        buildNumberFromEnv || pkg.versionTracker?.buildNumber || config.buildNumber || '1';
-
-      // Get environment from config or package.json
-      const environment =
-        process.env.NODE_ENV ||
-        config.environment ||
-        pkg.versionTracker?.environment ||
-        'development';
-
-      // Get app name from package.json or config
-      const appName = pkg.name || config.appName || 'Unknown App';
-
-      this.versionInfo = {
-        appName,
-        version,
-        buildNumber,
-        environment,
-        lastDeployed: new Date().toISOString(),
-      };
-
-      Logger.info(this.versionInfo);
-    } catch (error) {
-      Logger.error(`Failed to load package.json: ${error}`);
-      throw error;
-    }
   }
 
   /**
@@ -110,156 +59,93 @@ export class VersionTracker {
    * Updates the deployment timestamp and logs version info
    */
   public updateDeploymentInfo(): void {
-    this.versionInfo.lastDeployed = new Date().toISOString();
+    this.versionInfo.lastUpdated = new Date().toISOString();
     Logger.info(this.versionInfo);
   }
 
   /**
-   * Checks for version updates in env or package.json
+   * Checks for version updates in env
    */
   public async checkForUpdates(): Promise<boolean> {
-    try {
-      const pkg = await FileOperations.readPackageJsonAsync(this.packageJsonPath);
-      const versionFromEnv = process.env.APP_VERSION;
+    const versionFromEnv = process.env.APP_VERSION;
+    const buildNumberFromEnv = process.env.BUILD_NUMBER;
+    const environmentFromEnv = process.env.NODE_ENV;
 
-      if (versionFromEnv && versionFromEnv !== this.versionInfo.version) {
-        this.versionInfo.version = versionFromEnv;
-        Logger.info(this.versionInfo);
-        return true;
-      }
+    let hasUpdates = false;
 
-      if (pkg.version && pkg.version !== this.versionInfo.version) {
-        this.versionInfo.version = pkg.version;
-        Logger.info(this.versionInfo);
-        return true;
-      }
-
-      return false;
-    } catch (error) {
-      if (error instanceof PackageJsonReadError) {
-        Logger.warn('Could not check for updates: package.json not found');
-        return false;
-      }
-      Logger.error(`Failed to check for updates: ${error}`);
-      throw error;
+    if (versionFromEnv && versionFromEnv !== this.versionInfo.version) {
+      this.versionInfo.version = versionFromEnv;
+      hasUpdates = true;
     }
+
+    if (buildNumberFromEnv && buildNumberFromEnv !== this.versionInfo.buildNumber) {
+      this.versionInfo.buildNumber = buildNumberFromEnv;
+      hasUpdates = true;
+    }
+
+    if (environmentFromEnv && environmentFromEnv !== this.versionInfo.environment) {
+      this.versionInfo.environment = environmentFromEnv;
+      hasUpdates = true;
+    }
+
+    if (hasUpdates) {
+      Logger.info(this.versionInfo);
+    }
+
+    return hasUpdates;
   }
 
   /**
-   * Increments the build number and updates package.json
+   * Increments the build number
    */
-  public async incrementBuildNumber(): Promise<string> {
-    try {
-      const pkg = await FileOperations.readPackageJsonAsync(this.packageJsonPath);
-      const currentBuildNumber = pkg.versionTracker?.buildNumber || '1';
-      const newBuildNumber = BuildNumberUtils.getNextBuildNumber(currentBuildNumber);
-
-      if (!pkg.versionTracker) {
-        pkg.versionTracker = {
-          buildNumber: newBuildNumber,
-          lastDeployed: new Date().toISOString(),
-          environment: this.versionInfo.environment,
-        };
-      } else {
-        pkg.versionTracker.buildNumber = newBuildNumber;
-      }
-
-      await FileOperations.writePackageJson(this.packageJsonPath, pkg);
-
-      this.versionInfo.buildNumber = newBuildNumber;
-      Logger.success(this.versionInfo);
-      return newBuildNumber;
-    } catch (error) {
-      const errorMessage = error instanceof Error ? error.message : String(error);
-      Logger.error(`Failed to increment build number: ${errorMessage}`);
-      throw new Error(errorMessage);
-    }
+  public incrementBuildNumber(): string {
+    const currentBuildNumber = parseInt(this.versionInfo.buildNumber, 10);
+    const newBuildNumber = isNaN(currentBuildNumber) ? '1' : (currentBuildNumber + 1).toString();
+    this.versionInfo.buildNumber = newBuildNumber;
+    Logger.success(this.versionInfo);
+    return newBuildNumber;
   }
 
   /**
-   * Sets a specific build number and updates package.json
+   * Sets a specific build number
    */
-  public async setBuildNumber(buildNumber: string): Promise<void> {
-    try {
-      const pkg = await FileOperations.readPackageJsonAsync(this.packageJsonPath);
-
-      if (!pkg.versionTracker) {
-        pkg.versionTracker = {
-          buildNumber,
-          lastDeployed: new Date().toISOString(),
-          environment: this.versionInfo.environment,
-        };
-      } else {
-        pkg.versionTracker.buildNumber = buildNumber;
-      }
-
-      await FileOperations.writePackageJson(this.packageJsonPath, pkg);
-
-      this.versionInfo.buildNumber = buildNumber;
-      Logger.success(this.versionInfo);
-    } catch (error) {
-      const errorMessage = error instanceof Error ? error.message : String(error);
-      Logger.error(`Failed to set build number: ${errorMessage}`);
-      throw new Error(errorMessage);
-    }
+  public setBuildNumber(buildNumber: string): void {
+    this.versionInfo.buildNumber = buildNumber;
+    Logger.success(this.versionInfo);
   }
 
   /**
    * Increments the version number based on the specified type (major, minor, or patch)
-   * @param type The type of version increment (major, minor, or patch)
-   * @returns The new version string
    */
-  public async incrementVersion(type: 'major' | 'minor' | 'patch'): Promise<string> {
-    try {
-      const pkg = await FileOperations.readPackageJsonAsync(this.packageJsonPath);
-      const currentVersion = pkg.version || '0.0.0';
-      const [major, minor, patch] = currentVersion.split('.').map(Number);
+  public incrementVersion(type: 'major' | 'minor' | 'patch'): string {
+    const [major, minor, patch] = this.versionInfo.version!.split('.').map(Number);
 
-      let newVersion: string;
-      switch (type) {
-        case 'major':
-          newVersion = `${major + 1}.0.0`;
-          break;
-        case 'minor':
-          newVersion = `${major}.${minor + 1}.0`;
-          break;
-        case 'patch':
-          newVersion = `${major}.${minor}.${patch + 1}`;
-          break;
-        default:
-          throw new Error(`Invalid version type: ${type}`);
-      }
-
-      pkg.version = newVersion;
-      await FileOperations.writePackageJson(this.packageJsonPath, pkg);
-
-      this.versionInfo.version = newVersion;
-      Logger.success(this.versionInfo);
-      return newVersion;
-    } catch (error) {
-      const errorMessage = error instanceof Error ? error.message : String(error);
-      Logger.error(`Failed to increment version: ${errorMessage}`);
-      throw new Error(errorMessage);
+    let newVersion: string;
+    switch (type) {
+      case 'major':
+        newVersion = `${major + 1}.0.0`;
+        break;
+      case 'minor':
+        newVersion = `${major}.${minor + 1}.0`;
+        break;
+      case 'patch':
+        newVersion = `${major}.${minor}.${patch + 1}`;
+        break;
+      default:
+        throw new Error(`Invalid version type: ${type}`);
     }
+
+    this.versionInfo.version = newVersion;
+    Logger.success(this.versionInfo);
+    return newVersion;
   }
 
   /**
    * Sets the version number to a specific value
-   * @param version The new version string
-   * @returns The new version string
    */
-  public async setVersion(version: string): Promise<string> {
-    try {
-      const pkg = await FileOperations.readPackageJsonAsync(this.packageJsonPath);
-      pkg.version = version;
-      await FileOperations.writePackageJson(this.packageJsonPath, pkg);
-
-      this.versionInfo.version = version;
-      Logger.success(this.versionInfo);
-      return version;
-    } catch (error) {
-      Logger.error(`Failed to set version: ${error}`);
-      throw error;
-    }
+  public setVersion(version: string): string {
+    this.versionInfo.version = version;
+    Logger.success(this.versionInfo);
+    return version;
   }
 }

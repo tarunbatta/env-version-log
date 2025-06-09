@@ -11,7 +11,7 @@ export class Logger {
     if (info.version) parts.push(chalk.green(`v${info.version}`));
     if (info.buildNumber) parts.push(chalk.yellow(`#${info.buildNumber}`));
     if (info.environment) parts.push(chalk.magenta(`[${info.environment}]`));
-    if (info.lastDeployed) parts.push(chalk.gray(`(Deployed: ${info.lastDeployed})`));
+    if (info.lastUpdated) parts.push(chalk.gray(`(Updated: ${new Date(info.lastUpdated).toLocaleString()})`));
     return parts.join(' ');
   }
 
@@ -49,15 +49,15 @@ export class Logger {
 
   static logVersionInfo(info: VersionInfo): void {
     const envEmoji = info.environment === 'production' ? '🚀' : '🔧';
-    const timestamp = new Date(info.lastDeployed || new Date()).toLocaleString();
+    const timestamp = new Date(info.lastUpdated || new Date()).toLocaleString();
 
     console.log('\n📦 Application Information:');
     console.log('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
-    console.log(`${envEmoji} Environment: ${info.environment}`);
     console.log(`📋 App Name: ${info.appName || 'N/A'}`);
+    console.log(`${envEmoji} Environment: ${info.environment}`);
     console.log(`🔢 Version: ${info.version || 'N/A'}`);
     console.log(`🏗️  Build: ${info.buildNumber}`);
-    console.log(`⏰ Last Deployed: ${timestamp}`);
+    console.log(`⏰ Last Updated: ${timestamp}`);
     console.log('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n');
   }
 }

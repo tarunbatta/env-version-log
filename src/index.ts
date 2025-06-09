@@ -27,6 +27,6 @@ export type { VersionInfo, VersionTrackerConfig, VersionType, PackageJson };
 export { PackageJsonNotFoundError, PackageJsonReadError, PackageJsonWriteError };
 
 // Export a default instance creator
-export const createVersionTracker = async (config: VersionTrackerConfig = {}) => {
-  return VersionTracker.initialize(config, config.packageJsonPath);
+export const createVersionTracker = async (config: Partial<VersionInfo> = {}) => {
+  return VersionTracker.initialize(config);
 };

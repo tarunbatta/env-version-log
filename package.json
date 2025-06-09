@@ -1,6 +1,6 @@
 {
   "name": "env-version-log",
-  "version": "1.0.7",
+  "version": "1.0.8",
   "description": "A TypeScript-friendly package for managing and tracking application versions, build numbers, and deployment information.",
   "type": "module",
   "main": "./dist/cjs/index.js",
