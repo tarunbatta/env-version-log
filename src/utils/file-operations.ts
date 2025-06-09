@@ -32,10 +32,20 @@ export class FileOperations {
   }
 
   /**
-   * Reads and parses the package.json file from the given path.
+   * Synchronously reads and parses the package.json file.
+   * For testing purposes only.
+   */
+  public static readPackageJson(): PackageJson {
+    const filePath = this.findPackageJson();
+    const data = fs.readFileSync(filePath, 'utf8');
+    return JSON.parse(data);
+  }
+
+  /**
+   * Asynchronously reads and parses the package.json file from the given path.
    * Throws PackageJsonReadError on read or parse failure.
    */
-  public static async readPackageJson(filePath: string): Promise<PackageJson> {
+  public static async readPackageJsonAsync(filePath: string): Promise<PackageJson> {
     try {
       const data = await fs.promises.readFile(filePath, 'utf8');
       try {

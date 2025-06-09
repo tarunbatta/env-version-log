@@ -3,6 +3,8 @@ import { FileOperations } from './utils/file-operations';
 import { BuildNumberUtils } from './utils/build-number';
 import { Logger } from './utils/logger';
 import { PackageJsonReadError } from './types/errors';
+import * as fs from 'fs';
+import * as path from 'path';
 
 /**
  * Main class for version and build tracking
@@ -42,7 +44,7 @@ export class VersionTracker {
    */
   private async loadPackageJson(config: Partial<VersionInfo>): Promise<void> {
     try {
-      const pkg = await FileOperations.readPackageJson(this.packageJsonPath);
+      const pkg = await FileOperations.readPackageJsonAsync(this.packageJsonPath);
 
       // Get version from environment variable, package.json, or config
       const versionFromEnv = process.env.APP_VERSION;
@@ -51,17 +53,20 @@ export class VersionTracker {
       // Get build number from environment variable, package.json, or config
       const buildNumberFromEnv = process.env.BUILD_NUMBER;
       const buildNumber =
-        buildNumberFromEnv || pkg.versionStamper?.buildNumber || config.buildNumber || '1';
+        buildNumberFromEnv || pkg.versionTracker?.buildNumber || config.buildNumber || '1';
 
       // Get environment from config or package.json
       const environment =
         process.env.NODE_ENV ||
         config.environment ||
-        pkg.versionStamper?.environment ||
+        pkg.versionTracker?.environment ||
         'development';
 
+      // Get app name from package.json or config
+      const appName = pkg.name || config.appName || 'Unknown App';
+
       this.versionInfo = {
-        appName: pkg.name || config.appName,
+        appName,
         version,
         buildNumber,
         environment,
@@ -87,10 +92,11 @@ export class VersionTracker {
   }
 
   /**
-   * Logs the version info to the console
+   * Logs all version information in a formatted way
    */
-  private logVersionInfo(): void {
-    Logger.info(this.versionInfo);
+  logVersionInfo(): void {
+    const info = this.getVersionInfo();
+    Logger.logVersionInfo(info);
   }
 
   /**
@@ -113,7 +119,7 @@ export class VersionTracker {
    */
   public async checkForUpdates(): Promise<boolean> {
     try {
-      const pkg = await FileOperations.readPackageJson(this.packageJsonPath);
+      const pkg = await FileOperations.readPackageJsonAsync(this.packageJsonPath);
       const versionFromEnv = process.env.APP_VERSION;
 
       if (versionFromEnv && versionFromEnv !== this.versionInfo.version) {
@@ -144,18 +150,18 @@ export class VersionTracker {
    */
   public async incrementBuildNumber(): Promise<string> {
     try {
-      const pkg = await FileOperations.readPackageJson(this.packageJsonPath);
-      const currentBuildNumber = pkg.versionStamper?.buildNumber || '1';
+      const pkg = await FileOperations.readPackageJsonAsync(this.packageJsonPath);
+      const currentBuildNumber = pkg.versionTracker?.buildNumber || '1';
       const newBuildNumber = BuildNumberUtils.getNextBuildNumber(currentBuildNumber);
 
-      if (!pkg.versionStamper) {
-        pkg.versionStamper = {
+      if (!pkg.versionTracker) {
+        pkg.versionTracker = {
           buildNumber: newBuildNumber,
           lastDeployed: new Date().toISOString(),
           environment: this.versionInfo.environment,
         };
       } else {
-        pkg.versionStamper.buildNumber = newBuildNumber;
+        pkg.versionTracker.buildNumber = newBuildNumber;
       }
 
       await FileOperations.writePackageJson(this.packageJsonPath, pkg);
@@ -175,16 +181,16 @@ export class VersionTracker {
    */
   public async setBuildNumber(buildNumber: string): Promise<void> {
     try {
-      const pkg = await FileOperations.readPackageJson(this.packageJsonPath);
+      const pkg = await FileOperations.readPackageJsonAsync(this.packageJsonPath);
 
-      if (!pkg.versionStamper) {
-        pkg.versionStamper = {
+      if (!pkg.versionTracker) {
+        pkg.versionTracker = {
           buildNumber,
           lastDeployed: new Date().toISOString(),
           environment: this.versionInfo.environment,
         };
       } else {
-        pkg.versionStamper.buildNumber = buildNumber;
+        pkg.versionTracker.buildNumber = buildNumber;
       }
 
       await FileOperations.writePackageJson(this.packageJsonPath, pkg);
@@ -205,7 +211,7 @@ export class VersionTracker {
    */
   public async incrementVersion(type: 'major' | 'minor' | 'patch'): Promise<string> {
     try {
-      const pkg = await FileOperations.readPackageJson(this.packageJsonPath);
+      const pkg = await FileOperations.readPackageJsonAsync(this.packageJsonPath);
       const currentVersion = pkg.version || '0.0.0';
       const [major, minor, patch] = currentVersion.split('.').map(Number);
 
@@ -244,7 +250,7 @@ export class VersionTracker {
    */
   public async setVersion(version: string): Promise<string> {
     try {
-      const pkg = await FileOperations.readPackageJson(this.packageJsonPath);
+      const pkg = await FileOperations.readPackageJsonAsync(this.packageJsonPath);
       pkg.version = version;
       await FileOperations.writePackageJson(this.packageJsonPath, pkg);
 

@@ -46,4 +46,18 @@ export class Logger {
       console.warn(chalk.yellow('⚠'), this.formatVersionInfo(message));
     }
   }
+
+  static logVersionInfo(info: VersionInfo): void {
+    const envEmoji = info.environment === 'production' ? '🚀' : '🔧';
+    const timestamp = new Date(info.lastDeployed || new Date()).toLocaleString();
+
+    console.log('\n📦 Application Information:');
+    console.log('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
+    console.log(`${envEmoji} Environment: ${info.environment}`);
+    console.log(`📋 App Name: ${info.appName || 'N/A'}`);
+    console.log(`🔢 Version: ${info.version || 'N/A'}`);
+    console.log(`🏗️  Build: ${info.buildNumber}`);
+    console.log(`⏰ Last Deployed: ${timestamp}`);
+    console.log('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n');
+  }
 }

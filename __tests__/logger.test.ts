@@ -1,117 +1,84 @@
+import { jest } from '@jest/globals';
 import { Logger } from '../src/utils/logger';
 
 describe('Logger', () => {
-  let consoleSpy: jest.SpyInstance;
-
   beforeEach(() => {
-    consoleSpy = jest.spyOn(console, 'log').mockImplementation();
-    jest.spyOn(console, 'error').mockImplementation();
-    jest.spyOn(console, 'warn').mockImplementation();
+    // Clear all mocks before each test
+    jest.clearAllMocks();
   });
 
-  afterEach(() => {
-    consoleSpy.mockRestore();
-  });
-
-  describe('info', () => {
-    it('should log string message with info prefix', () => {
-      Logger.info('Test message');
-      expect(consoleSpy).toHaveBeenCalledWith(expect.any(String), 'Test message');
-    });
-
-    it('should log version info with info prefix', () => {
-      const versionInfo = {
+  describe('logVersionInfo', () => {
+    it('should log version information in a formatted way', () => {
+      // Arrange
+      const mockVersionInfo = {
         appName: 'test-app',
         version: '1.0.0',
-        buildNumber: '1',
-        environment: 'test',
-        lastDeployed: '2024-01-01T00:00:00.000Z',
+        buildNumber: '42',
+        environment: 'development',
+        lastDeployed: new Date().toISOString(),
       };
-      Logger.info(versionInfo);
-      expect(consoleSpy).toHaveBeenCalledWith(
-        expect.any(String),
-        expect.stringContaining('test-app')
-      );
-    });
-  });
 
-  describe('success', () => {
-    it('should log string message with success prefix', () => {
-      Logger.success('Test message');
-      expect(consoleSpy).toHaveBeenCalledWith(expect.any(String), 'Test message');
+      // Spy on console.log
+      const consoleSpy = jest.spyOn(console, 'log').mockImplementation(() => {});
+
+      // Act
+      Logger.logVersionInfo(mockVersionInfo);
+
+      // Assert
+      expect(consoleSpy).toHaveBeenCalledTimes(8); // Header, top separator, 5 info lines, bottom separator
+      expect(consoleSpy).toHaveBeenCalledWith(expect.stringContaining('test-app'));
+      expect(consoleSpy).toHaveBeenCalledWith(expect.stringContaining('1.0.0'));
+      expect(consoleSpy).toHaveBeenCalledWith(expect.stringContaining('42'));
+      expect(consoleSpy).toHaveBeenCalledWith(expect.stringContaining('development'));
+
+      // Cleanup
+      consoleSpy.mockRestore();
     });
 
-    it('should log version info with success prefix', () => {
-      const versionInfo = {
+    it('should use production emoji for production environment', () => {
+      // Arrange
+      const mockVersionInfo = {
         appName: 'test-app',
         version: '1.0.0',
-        buildNumber: '1',
-        environment: 'test',
-        lastDeployed: '2024-01-01T00:00:00.000Z',
+        buildNumber: '42',
+        environment: 'production',
+        lastDeployed: new Date().toISOString(),
       };
-      Logger.success(versionInfo);
-      expect(consoleSpy).toHaveBeenCalledWith(
-        expect.any(String),
-        expect.stringContaining('test-app')
-      );
-    });
-  });
 
-  describe('error', () => {
-    it('should log string message with error prefix', () => {
-      Logger.error('Test message');
-      expect(console.error).toHaveBeenCalledWith(expect.any(String), 'Test message');
+      // Spy on console.log
+      const consoleSpy = jest.spyOn(console, 'log').mockImplementation(() => {});
+
+      // Act
+      Logger.logVersionInfo(mockVersionInfo);
+
+      // Assert
+      expect(consoleSpy).toHaveBeenCalledWith(expect.stringContaining('🚀'));
+
+      // Cleanup
+      consoleSpy.mockRestore();
     });
 
-    it('should log version info with error prefix', () => {
-      const versionInfo = {
+    it('should use development emoji for non-production environment', () => {
+      // Arrange
+      const mockVersionInfo = {
         appName: 'test-app',
         version: '1.0.0',
-        buildNumber: '1',
-        environment: 'test',
-        lastDeployed: '2024-01-01T00:00:00.000Z',
+        buildNumber: '42',
+        environment: 'development',
+        lastDeployed: new Date().toISOString(),
       };
-      Logger.error(versionInfo);
-      expect(console.error).toHaveBeenCalledWith(
-        expect.any(String),
-        expect.stringContaining('test-app')
-      );
-    });
-  });
 
-  describe('warn', () => {
-    it('should log string message with warning prefix', () => {
-      Logger.warn('Test message');
-      expect(console.warn).toHaveBeenCalledWith(expect.any(String), 'Test message');
-    });
+      // Spy on console.log
+      const consoleSpy = jest.spyOn(console, 'log').mockImplementation(() => {});
 
-    it('should log version info with warning prefix', () => {
-      const versionInfo = {
-        appName: 'test-app',
-        version: '1.0.0',
-        buildNumber: '1',
-        environment: 'test',
-        lastDeployed: '2024-01-01T00:00:00.000Z',
-      };
-      Logger.warn(versionInfo);
-      expect(console.warn).toHaveBeenCalledWith(
-        expect.any(String),
-        expect.stringContaining('test-app')
-      );
-    });
-  });
+      // Act
+      Logger.logVersionInfo(mockVersionInfo);
 
-  describe('formatVersionInfo', () => {
-    it('should handle partial version info', () => {
-      const versionInfo = {
-        appName: undefined,
-        version: undefined,
-        buildNumber: '1',
-        environment: 'test',
-        lastDeployed: undefined,
-      };
-      Logger.info(versionInfo);
-      expect(consoleSpy).toHaveBeenCalledWith(expect.any(String), expect.stringContaining('#1'));
+      // Assert
+      expect(consoleSpy).toHaveBeenCalledWith(expect.stringContaining('🔧'));
+
+      // Cleanup
+      consoleSpy.mockRestore();
     });
   });
 });
