@@ -37,4 +37,13 @@ out/
 # Cache
 .cache/
 .npm/
-.eslintcache 
+.eslintcache
+
+# Build output
+*.tgz
+
+# IDE
+.idea/
+.vscode/
+*.swp
+*.swo 

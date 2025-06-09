@@ -1,7 +1,7 @@
 {
   "name": "version-stamper",
-  "version": "1.0.0",
-  "description": "A simple version tracking utility for single-page applications",
+  "version": "1.0.4",
+  "description": "A lightweight, zero-configuration version tracking utility for JavaScript/TypeScript applications",
   "main": "dist/index.js",
   "types": "dist/index.d.ts",
   "scripts": {
@@ -11,7 +11,11 @@
     "test:coverage": "jest --coverage --ci",
     "lint": "npx eslint . --ext .ts",
     "lint:fix": "npx eslint . --ext .ts --fix",
-    "prepare": "husky"
+    "prepare": "husky",
+    "prepublishOnly": "npm run build",
+    "preversion": "npm run lint",
+    "version": "npm run format && git add -A src",
+    "postversion": "git push && git push --tags"
   },
   "repository": {
     "type": "git",
@@ -22,9 +26,12 @@
     "tracking",
     "spa",
     "react",
-    "typescript"
+    "typescript",
+    "build-number",
+    "deployment",
+    "versioning"
   ],
-  "author": "",
+  "author": "Tarun Batta",
   "license": "MIT",
   "bugs": {
     "url": "https://github.com/tarunbatta/version-stamper/issues"
@@ -47,7 +54,9 @@
     "typescript": "~5.5.0"
   },
   "files": [
-    "dist"
+    "dist",
+    "README.md",
+    "LICENSE"
   ],
   "lint-staged": {
     "*.{ts,tsx}": [
@@ -57,5 +66,11 @@
     "*.{json,md}": [
       "prettier --write"
     ]
+  },
+  "engines": {
+    "node": ">=14.0.0"
+  },
+  "publishConfig": {
+    "access": "public"
   }
 }

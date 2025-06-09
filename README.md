@@ -1,213 +1,179 @@
 # Version Stamper
 
-A lightweight, zero-configuration version tracking utility for JavaScript/TypeScript applications. Version Stamper helps you keep track of your application's version, build number, and environment information, making it easy to identify which version of your application is running in any environment.
+A lightweight, zero-configuration version tracking utility for JavaScript/TypeScript applications. Automatically manages version numbers and build numbers in your application.
 
-## 🚀 Quick Start
+## Features
+
+- 🔄 Automatic version tracking
+- 📦 Build number management
+- 🔢 Version number management
+- 🚀 CI/CD integration
+- 📝 Beautiful console output
+- 🔍 Version update detection
+- ⚡ Zero configuration required
+
+## Installation
 
 ```bash
-# Install the package
 npm install version-stamper
-
-# Initialize in your application
-import { VersionTracker } from 'version-stamper';
-
-// Initialize (automatically reads from package.json)
-VersionTracker.initialize();
-
-// Log version info to console
-VersionTracker.getInstance().logVersionInfo();
 ```
 
-## ✨ Features
-
-- 📦 **Zero Configuration**: Works out of the box with your package.json
-- 🔄 **Automatic Version Sync**: Syncs with package.json or environment variables
-- 🔢 **Build Number Management**: Multiple ways to manage build numbers
-- 🕒 **Deployment Tracking**: Track when your app was last deployed
-- 🔍 **Version Monitoring**: Automatically detect version updates
-- 🎨 **Beautiful Console Output**: Styled version information in your console
-- 📱 **Framework Agnostic**: Works with any JavaScript/TypeScript application
-- 🔒 **TypeScript Support**: Full TypeScript support with type definitions
-
-## 📖 Usage Guide
-
-### Basic Usage
+## Quick Start
 
 ```typescript
 import { VersionTracker } from 'version-stamper';
 
-// Initialize with default settings
-VersionTracker.initialize();
+// Initialize the tracker
+const tracker = VersionTracker.initialize();
 
-// Get version information
-const versionInfo = VersionTracker.getInstance().getVersionInfo();
+// Get current version info
+const versionInfo = tracker.getVersionInfo();
 console.log(versionInfo);
-// Output: {
-//   appName: 'my-app',
-//   version: '1.0.0',
-//   buildNumber: '1',
-//   environment: 'development',
-//   lastDeployed: '2024-03-15T14:30:22.000Z'
-// }
+// Output: { appName: 'my-app', version: '1.0.0', buildNumber: '1', environment: 'development', lastDeployed: '2024-03-14T12:00:00.000Z' }
+
+// Increment build number
+const newBuildNumber = tracker.incrementBuildNumber();
+console.log(newBuildNumber); // Output: '2'
+
+// Increment version number
+const newVersion = await tracker.incrementVersion('patch'); // 'major', 'minor', or 'patch'
+console.log(newVersion); // Output: '1.0.1'
+
+// Set specific version
+const specificVersion = await tracker.setVersion('2.0.0');
+console.log(specificVersion); // Output: '2.0.0'
 ```
 
-### Version Synchronization
+## Version Management
 
-Version Stamper automatically syncs with your package.json version, but you can also use environment variables:
+Version Stamper provides flexible version management options:
 
-```bash
-# For React applications
-REACT_APP_VERSION=$npm_package_version
+### Version Sources (in order of priority)
 
-# For other applications
-VERSION=$npm_package_version
-```
-
-Version priority:
-
-1. Environment variables (REACT_APP_VERSION or VERSION)
-2. package.json version
+1. Environment variable (`APP_VERSION`)
+2. `package.json` version field
 3. Manual configuration
 
-### Build Number Management
+### Version Increment Types
 
-Choose from multiple ways to manage build numbers:
+- **Major**: Increments the first number (e.g., 1.0.0 → 2.0.0)
+- **Minor**: Increments the second number (e.g., 1.0.0 → 1.1.0)
+- **Patch**: Increments the third number (e.g., 1.0.0 → 1.0.1)
 
-1. **Automatic Timestamp-based**:
-
-   ```bash
-   # Generate a new build number (YYYYMMDDTHHMMSSZ format)
-   npm run generate-build
-   ```
-
-2. **Environment Variable**:
-
-   ```bash
-   BUILD_NUMBER=123 npm start
-   ```
-
-3. **Manual Increment**:
-
-   ```typescript
-   const newBuildNumber = VersionTracker.getInstance().incrementBuildNumber();
-   ```
-
-4. **Manual Set**:
-   ```typescript
-   VersionTracker.getInstance().setBuildNumber('100');
-   ```
-
-### React Integration
+### Version Methods
 
 ```typescript
-import { VersionTracker } from 'version-stamper';
-import { useEffect } from 'react';
+// Increment version
+await tracker.incrementVersion('patch'); // 1.0.0 → 1.0.1
+await tracker.incrementVersion('minor'); // 1.0.0 → 1.1.0
+await tracker.incrementVersion('major'); // 1.0.0 → 2.0.0
 
-function App() {
-  useEffect(() => {
-    // Initialize with environment-specific config
-    VersionTracker.initialize({
-      buildNumber: process.env.REACT_APP_BUILD_NUMBER || '1',
-      environment: process.env.NODE_ENV
-    });
-
-    // Log version info
-    VersionTracker.getInstance().logVersionInfo();
-
-    // Check for updates every 5 minutes
-    const interval = setInterval(async () => {
-      const hasUpdates = await VersionTracker.getInstance().checkForUpdates();
-      if (hasUpdates) {
-        console.log('New version detected!');
-      }
-    }, 5 * 60 * 1000);
-
-    return () => clearInterval(interval);
-  }, []);
-
-  return <div>Your App</div>;
-}
+// Set specific version
+await tracker.setVersion('2.1.3');
 ```
 
-### CI/CD Integration
+## Build Number Management
 
-Add to your build process:
+Build numbers are stored in your `package.json` file and can be managed in several ways:
 
-```json
-{
-  "scripts": {
-    "prebuild": "npm run generate-build",
-    "build": "your-build-command"
-  }
-}
-```
+### Build Number Sources (in order of priority)
 
-Or in your CI/CD pipeline:
+1. Environment variable (`BUILD_NUMBER`)
+2. `package.json` buildNumber field
+3. Manual configuration
 
-```bash
-# Generate and use build number
-BUILD_NUMBER=$(npm run generate-build)
-npm run build
-```
-
-## 🔧 API Reference
-
-### VersionTracker.initialize(config?: Partial<VersionInfo>, packageJsonPath?: string)
-
-Initializes the version tracker with optional configuration.
+### Build Number Methods
 
 ```typescript
-VersionTracker.initialize({
-  appName: 'My App',
-  buildNumber: '123',
+// Increment build number
+const newBuildNumber = tracker.incrementBuildNumber();
+
+// Set specific build number
+tracker.setBuildNumber('100');
+```
+
+## Console Output
+
+Version Stamper provides beautiful, styled console output for version information:
+
+```typescript
+// Initialize and log version info
+const tracker = VersionTracker.initialize();
+tracker.logVersionInfo();
+
+// Output:
+// my-app v1.0.0 (build 1) - development
+// Last deployed: 3/14/2024, 12:00:00 PM
+```
+
+## CI/CD Integration
+
+### GitHub Actions Example
+
+```yaml
+name: Deploy
+on:
+  push:
+    branches: [main]
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v2
+      - uses: actions/setup-node@v2
+        with:
+          node-version: '16'
+      - run: npm install
+      - name: Build and Deploy
+        env:
+          APP_VERSION: ${{ github.ref_name }}
+          BUILD_NUMBER: ${{ github.run_number }}
+        run: npm run build
+```
+
+## Configuration
+
+### Environment Variables
+
+- `APP_VERSION`: Override the version number
+- `BUILD_NUMBER`: Override the build number
+- `NODE_ENV`: Set the environment (defaults to 'development')
+
+### Custom Configuration
+
+```typescript
+const tracker = VersionTracker.initialize({
+  appName: 'my-app',
+  version: '1.0.0',
+  buildNumber: '1',
   environment: 'production',
 });
 ```
 
-### VersionTracker.getInstance()
+## API Reference
 
-Returns the singleton instance.
+### VersionTracker
 
-### VersionTracker.logVersionInfo()
+#### Static Methods
 
-Logs version information to console with styling.
+- `initialize(config?: VersionConfig, packageJsonPath?: string): VersionTracker`
+- `getInstance(): VersionTracker`
 
-### VersionTracker.getVersionInfo()
+#### Instance Methods
 
-Returns current version information.
+- `getVersionInfo(): VersionInfo`
+- `incrementBuildNumber(): string`
+- `setBuildNumber(buildNumber: string): void`
+- `incrementVersion(type: 'major' | 'minor' | 'patch'): Promise<string>`
+- `setVersion(version: string): Promise<string>`
+- `checkForUpdates(): Promise<boolean>`
+- `updateDeploymentInfo(): void`
+- `logVersionInfo(): void`
 
-### VersionTracker.updateDeploymentInfo()
-
-Updates deployment timestamp and logs version info.
-
-### VersionTracker.checkForUpdates()
-
-Checks for version updates in env or package.json.
-
-### VersionTracker.incrementBuildNumber()
-
-Increments build number and updates package.json.
-
-### VersionTracker.setBuildNumber(buildNumber: string)
-
-Sets specific build number and updates package.json.
-
-## 📝 Types
-
-```typescript
-interface VersionInfo {
-  appName: string; // Application name
-  version: string; // Version number
-  buildNumber: string; // Build number
-  environment: string; // Environment (development, production, etc.)
-  lastDeployed?: string; // Last deployment timestamp
-}
-```
-
-## 🤝 Contributing
+## Contributing
 
 Contributions are welcome! Please feel free to submit a Pull Request.
 
-## 📄 License
+## License
 
-MIT License - feel free to use this package in your projects!
+MIT

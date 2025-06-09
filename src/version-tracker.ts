@@ -2,18 +2,41 @@ import { VersionInfo } from './types/versioninfo';
 import { FileOperations } from './utils/file-operations';
 import { BuildNumberUtils } from './utils/build-number';
 import { Logger } from './utils/logger';
+import { PackageJson } from './types/packagejson';
+import { PackageJsonReadError } from './types/errors';
 
 /**
  * Main class for version and build tracking
  */
 export class VersionTracker {
   private static instance: VersionTracker;
-  private readonly packageJsonPath: string;
   private versionInfo: VersionInfo;
+  private packageJsonPath: string;
 
-  private constructor(versionInfo: VersionInfo, packageJsonPath?: string) {
-    this.versionInfo = versionInfo;
+  private constructor(config: Partial<VersionInfo> = {}, packageJsonPath?: string) {
     this.packageJsonPath = packageJsonPath || FileOperations.findPackageJson();
+    const pkg = FileOperations.readPackageJson(this.packageJsonPath);
+
+    // Get version from environment variable, package.json, or config
+    const versionFromEnv = process.env.APP_VERSION;
+    const version = versionFromEnv || pkg.version || config.version || '0.0.0';
+
+    // Get build number from environment variable, package.json, or config
+    const buildNumberFromEnv = process.env.BUILD_NUMBER;
+    const buildNumber = buildNumberFromEnv || pkg.buildNumber || config.buildNumber || '1';
+
+    // Get environment from NODE_ENV or config
+    const environment = process.env.NODE_ENV || config.environment || 'development';
+
+    this.versionInfo = {
+      appName: pkg.name || config.appName,
+      version,
+      buildNumber,
+      environment,
+      lastDeployed: new Date().toISOString(),
+    };
+
+    Logger.info(this.versionInfo);
   }
 
   /**
@@ -24,29 +47,7 @@ export class VersionTracker {
     packageJsonPath?: string
   ): VersionTracker {
     if (!VersionTracker.instance) {
-      const pkg = FileOperations.readPackageJson(
-        packageJsonPath || FileOperations.findPackageJson()
-      );
-
-      // Priority order for version:
-      // 1. Environment variable (REACT_APP_VERSION or similar)
-      // 2. package.json version
-      // 3. Config override
-      const versionFromEnv = process.env.REACT_APP_VERSION || process.env.VERSION;
-
-      const defaultConfig: VersionInfo = {
-        appName: pkg.name,
-        version: versionFromEnv || pkg.version,
-        buildNumber: pkg.buildNumber || process.env.BUILD_NUMBER || '1',
-        environment: process.env.NODE_ENV || 'development',
-        lastDeployed: new Date().toISOString(),
-      };
-
-      VersionTracker.instance = new VersionTracker(
-        { ...defaultConfig, ...config },
-        packageJsonPath
-      );
-      Logger.info('VersionTracker initialized:', VersionTracker.instance.versionInfo);
+      VersionTracker.instance = new VersionTracker(config, packageJsonPath);
     }
     return VersionTracker.instance;
   }
@@ -57,7 +58,7 @@ export class VersionTracker {
   public static getInstance(): VersionTracker {
     if (!VersionTracker.instance) {
       Logger.error('VersionTracker not initialized. Call initialize() first.');
-      throw new Error('VersionTracker not initialized. Call initialize() first.');
+      throw new Error('VersionTracker not initialized');
     }
     return VersionTracker.instance;
   }
@@ -65,16 +66,8 @@ export class VersionTracker {
   /**
    * Logs the version info to the console
    */
-  public logVersionInfo(): void {
-    const { appName, version, buildNumber, environment, lastDeployed } = this.versionInfo;
-    Logger.info(
-      `%c${appName}%c v${version} (build ${buildNumber}) - ${environment}%c${
-        lastDeployed ? `\nLast deployed: ${new Date(lastDeployed).toLocaleString()}` : ''
-      }`,
-      'color: #4CAF50; font-weight: bold; font-size: 14px;',
-      'color: #666; font-size: 12px;',
-      'color: #888; font-size: 11px;'
-    );
+  private logVersionInfo(): void {
+    Logger.info(this.versionInfo);
   }
 
   /**
@@ -89,8 +82,7 @@ export class VersionTracker {
    */
   public updateDeploymentInfo(): void {
     this.versionInfo.lastDeployed = new Date().toISOString();
-    Logger.info('Deployment info updated:', this.versionInfo.lastDeployed);
-    this.logVersionInfo();
+    Logger.info(this.versionInfo);
   }
 
   /**
@@ -99,19 +91,28 @@ export class VersionTracker {
   public async checkForUpdates(): Promise<boolean> {
     try {
       const pkg = FileOperations.readPackageJson(this.packageJsonPath);
-      const versionFromEnv = process.env.REACT_APP_VERSION || process.env.VERSION;
-      const currentVersion = versionFromEnv || pkg.version;
+      const versionFromEnv = process.env.APP_VERSION;
 
-      if (currentVersion !== this.versionInfo.version) {
-        this.versionInfo.version = currentVersion;
-        Logger.info('Version updated:', currentVersion);
-        this.logVersionInfo();
+      if (versionFromEnv && versionFromEnv !== this.versionInfo.version) {
+        this.versionInfo.version = versionFromEnv;
+        Logger.info(this.versionInfo);
         return true;
       }
+
+      if (pkg.version && pkg.version !== this.versionInfo.version) {
+        this.versionInfo.version = pkg.version;
+        Logger.info(this.versionInfo);
+        return true;
+      }
+
       return false;
     } catch (error) {
-      Logger.error('Failed to check for version updates:', error);
-      return false;
+      if (error instanceof PackageJsonReadError) {
+        Logger.warn('Could not check for updates: package.json not found');
+        return false;
+      }
+      Logger.error(`Failed to check for updates: ${error}`);
+      throw error;
     }
   }
 
@@ -119,35 +120,101 @@ export class VersionTracker {
    * Increments the build number and updates package.json
    */
   public incrementBuildNumber(): string {
-    const pkg = FileOperations.readPackageJson(this.packageJsonPath);
-    const nextBuildNumber = BuildNumberUtils.getNextBuildNumber(this.versionInfo.buildNumber);
+    try {
+      const pkg = FileOperations.readPackageJson(this.packageJsonPath);
+      const newBuildNumber = BuildNumberUtils.getNextBuildNumber(pkg.buildNumber || '1');
+      pkg.buildNumber = newBuildNumber;
+      FileOperations.writePackageJson(this.packageJsonPath, pkg);
 
-    // Update in-memory version info
-    this.versionInfo.buildNumber = nextBuildNumber;
-
-    // Update package.json
-    pkg.buildNumber = nextBuildNumber;
-    FileOperations.writePackageJson(this.packageJsonPath, pkg);
-
-    Logger.info('Build number incremented:', nextBuildNumber);
-    this.logVersionInfo();
-    return nextBuildNumber;
+      this.versionInfo.buildNumber = newBuildNumber;
+      Logger.success(this.versionInfo);
+      return newBuildNumber;
+    } catch (error) {
+      Logger.error(`Failed to increment build number: ${error}`);
+      throw error;
+    }
   }
 
   /**
    * Sets a specific build number and updates package.json
    */
   public setBuildNumber(buildNumber: string): void {
-    const pkg = FileOperations.readPackageJson(this.packageJsonPath);
+    try {
+      const pkg = FileOperations.readPackageJson(this.packageJsonPath);
+      pkg.buildNumber = buildNumber;
+      FileOperations.writePackageJson(this.packageJsonPath, pkg);
 
-    // Update in-memory version info
-    this.versionInfo.buildNumber = buildNumber;
+      this.versionInfo.buildNumber = buildNumber;
+      Logger.success(this.versionInfo);
+    } catch (error) {
+      Logger.error(`Failed to set build number: ${error}`);
+      throw error;
+    }
+  }
 
-    // Update package.json
-    pkg.buildNumber = buildNumber;
-    FileOperations.writePackageJson(this.packageJsonPath, pkg);
+  private async readPackageJson(): Promise<PackageJson> {
+    return FileOperations.readPackageJson(this.packageJsonPath);
+  }
 
-    Logger.info('Build number set:', buildNumber);
-    this.logVersionInfo();
+  private async writePackageJson(data: PackageJson): Promise<void> {
+    await FileOperations.writePackageJson(this.packageJsonPath, data);
+  }
+
+  /**
+   * Increments the version number based on the specified type (major, minor, or patch)
+   * @param type The type of version increment (major, minor, or patch)
+   * @returns The new version string
+   */
+  public async incrementVersion(type: 'major' | 'minor' | 'patch'): Promise<string> {
+    try {
+      const pkg = FileOperations.readPackageJson(this.packageJsonPath);
+      const currentVersion = pkg.version || '0.0.0';
+      const [major, minor, patch] = currentVersion.split('.').map(Number);
+
+      let newVersion: string;
+      switch (type) {
+        case 'major':
+          newVersion = `${major + 1}.0.0`;
+          break;
+        case 'minor':
+          newVersion = `${major}.${minor + 1}.0`;
+          break;
+        case 'patch':
+          newVersion = `${major}.${minor}.${patch + 1}`;
+          break;
+        default:
+          throw new Error(`Invalid version type: ${type}`);
+      }
+
+      pkg.version = newVersion;
+      FileOperations.writePackageJson(this.packageJsonPath, pkg);
+
+      this.versionInfo.version = newVersion;
+      Logger.success(this.versionInfo);
+      return newVersion;
+    } catch (error) {
+      Logger.error(`Failed to increment version: ${error}`);
+      throw error;
+    }
+  }
+
+  /**
+   * Sets the version number to a specific value
+   * @param version The new version string
+   * @returns The new version string
+   */
+  public async setVersion(version: string): Promise<string> {
+    try {
+      const pkg = FileOperations.readPackageJson(this.packageJsonPath);
+      pkg.version = version;
+      FileOperations.writePackageJson(this.packageJsonPath, pkg);
+
+      this.versionInfo.version = version;
+      Logger.success(this.versionInfo);
+      return version;
+    } catch (error) {
+      Logger.error(`Failed to set version: ${error}`);
+      throw error;
+    }
   }
 }
