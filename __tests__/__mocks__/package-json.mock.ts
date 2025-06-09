@@ -24,7 +24,7 @@ export const mockPackageJson = {
 };
 
 // Helper function to create a mock package.json with custom values
-export const createMockPackageJson = (overrides: Partial<PackageJson> = {}) => ({
+export const createMockPackageJson = (overrides: Partial<PackageJson> = {}): PackageJson => ({
   ...mockPackageJson,
   ...overrides,
   versionStamper: {
@@ -34,12 +34,12 @@ export const createMockPackageJson = (overrides: Partial<PackageJson> = {}) => (
 });
 
 describe('Package JSON Mock', () => {
-  it('should create a mock package.json with default values', () => {
+  it('should create a mock package.json with default values', (): void => {
     const result = createMockPackageJson();
     expect(result).toEqual(mockPackageJson);
   });
 
-  it('should override default values with custom values', () => {
+  it('should override default values with custom values', (): void => {
     const customValues = {
       name: 'custom-app',
       version: '2.0.0',
@@ -52,12 +52,12 @@ describe('Package JSON Mock', () => {
     const result = createMockPackageJson(customValues);
     expect(result.name).toBe('custom-app');
     expect(result.version).toBe('2.0.0');
-    expect(result.versionStamper.buildNumber).toBe('42');
-    expect(result.versionStamper.environment).toBe('production');
-    expect(result.versionStamper.lastDeployed).toBe('2024-03-20T12:00:00.000Z');
+    expect(result.versionStamper!.buildNumber).toBe('42');
+    expect(result.versionStamper!.environment).toBe('production');
+    expect(result.versionStamper!.lastDeployed).toBe('2024-03-20T12:00:00.000Z');
   });
 
-  it('should preserve default values for unspecified fields', () => {
+  it('should preserve default values for unspecified fields', (): void => {
     const customValues = {
       name: 'custom-app',
     };

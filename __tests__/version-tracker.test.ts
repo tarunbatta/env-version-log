@@ -22,7 +22,7 @@ describe('VersionTracker', () => {
   beforeEach(() => {
     jest.clearAllMocks();
     // Reset the singleton instance
-    (VersionTracker as any).instance = undefined;
+    (VersionTracker as unknown as { instance: VersionTracker | undefined }).instance = undefined;
     // Mock findPackageJson to return a path
     (FileOperations.findPackageJson as jest.Mock).mockReturnValue('/path/to/package.json');
     // Mock writePackageJson to resolve successfully by default

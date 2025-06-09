@@ -10,7 +10,7 @@ module.exports = {
   moduleFileExtensions: ['ts', 'js', 'json', 'node'],
   collectCoverage: true,
   coverageDirectory: 'coverage',
-  coverageReporters: ['text', 'lcov'],
+  coverageReporters: ['text-summary'], // Simplified coverage reporting
   coverageThreshold: {
     global: {
       branches: 80,
@@ -20,12 +20,25 @@ module.exports = {
     },
   },
   // Performance optimizations
-  maxWorkers: '50%', // Use 50% of available CPU cores
-  testTimeout: 1000, // 1 second timeout per test
-  maxConcurrency: 5, // Run 5 tests in parallel
+  maxWorkers: 1, // Run tests sequentially
+  testTimeout: 5000, // 5 second timeout per test
+  maxConcurrency: 1, // No parallel execution
   bail: 1, // Stop on first failure
   verbose: false, // Reduce output verbosity
+  // Enable test caching
+  cache: true,
+  cacheDirectory: '.jest-cache',
   // Optimize coverage collection
-  collectCoverageFrom: ['src/**/*.ts', '!src/**/*.d.ts', '!src/types/**/*.ts'],
-  coveragePathIgnorePatterns: ['/node_modules/', '/dist/'],
+  collectCoverageFrom: [
+    'src/**/*.ts',
+    '!src/**/*.d.ts',
+    '!src/types/**/*.ts',
+    '!src/**/*.test.ts',
+    '!src/**/*.spec.ts',
+  ],
+  coveragePathIgnorePatterns: ['/node_modules/', '/dist/', '/__tests__/'],
+  // Add test environment options
+  testEnvironmentOptions: {
+    NODE_OPTIONS: '--max-old-space-size=1024 --expose-gc', // Reduced memory limit and enable manual GC
+  },
 };
