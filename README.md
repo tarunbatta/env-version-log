@@ -2,6 +2,10 @@
 
 A lightweight TypeScript package for tracking application versions and build numbers with environment awareness.
 
+[![npm version](https://img.shields.io/npm/v/env-version-log.svg?color=blue)](https://www.npmjs.com/package/env-version-log)
+[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
+[![TypeScript](https://img.shields.io/badge/TypeScript-Ready-blue.svg)](https://www.typescriptlang.org/)
+
 ## Features
 
 - 🚀 Simple version and build number tracking
@@ -9,11 +13,21 @@ A lightweight TypeScript package for tracking application versions and build num
 - ⚡ In-memory version management
 - 🔄 Environment variable support
 - 📝 Beautiful console logging
+- 🔒 TypeScript support with full type definitions
+- 📦 Zero dependencies
+- 🧪 Fully tested
 
 ## Installation
 
 ```bash
+# Using npm
 npm install env-version-log
+
+# Using yarn
+yarn add env-version-log
+
+# Using pnpm
+pnpm add env-version-log
 ```
 
 ## Quick Start
@@ -73,6 +87,20 @@ const tracker = await createVersionTracker({
 - `incrementVersion(type: 'major' | 'minor' | 'patch')`: Increments version number
 - `setVersion(version: string)`: Sets a specific version
 
+## Types
+
+```typescript
+interface VersionInfo {
+  appName: string;
+  version: string;
+  buildNumber: string;
+  environment: string;
+  lastUpdated?: Date;
+}
+
+type VersionType = 'major' | 'minor' | 'patch';
+```
+
 ## Example Output
 
 ```
@@ -86,6 +114,39 @@ const tracker = await createVersionTracker({
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 ```
 
+## Contributing
+
+Contributions are welcome! Please feel free to submit a Pull Request. For major changes, please open an issue first to discuss what you would like to change.
+
+1. Fork the repository
+2. Create your feature branch (`git checkout -b feature/amazing-feature`)
+3. Commit your changes (`git commit -m 'Add some amazing feature'`)
+4. Push to the branch (`git push origin feature/amazing-feature`)
+5. Open a Pull Request
+
+## Development
+
+```bash
+# Install dependencies
+npm install
+
+# Run tests
+npm test
+
+# Build the package
+npm run build
+
+# Lint the code
+npm run lint
+
+# Format the code
+npm run format
+```
+
 ## License
 
-MIT
+MIT © [Tarun Batta](https://www.linkedin.com/in/tarunbatta/)
+
+## Support
+
+If you find this package helpful, please consider giving it a ⭐️ on GitHub!

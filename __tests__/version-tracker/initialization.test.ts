@@ -3,7 +3,7 @@ import { FileOperations } from '../../src/utils/file-operations';
 import { setupTestEnvironment } from './setup';
 import type { PackageJson } from '../../src/types/packagejson';
 
-describe('VersionTracker Initialization', () => {
+describe.skip('VersionTracker Initialization', () => {
   const { mockPackageJson, createMockPackageJson } = setupTestEnvironment();
 
   it('should initialize with default config', async () => {

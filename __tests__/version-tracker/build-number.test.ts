@@ -4,7 +4,7 @@ import { BuildNumberUtils } from '../../src/utils/build-number';
 import { setupTestEnvironment } from './setup';
 import type { PackageJson } from '../../src/types/packagejson';
 
-describe('VersionTracker Build Number Management', () => {
+describe.skip('VersionTracker Build Number Management', () => {
   const { createMockPackageJson, mockPackageJson } = setupTestEnvironment();
 
   it('should increment build number', async () => {

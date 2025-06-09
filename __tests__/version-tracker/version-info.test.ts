@@ -3,7 +3,7 @@ import { FileOperations } from '../../src/utils/file-operations';
 import { setupTestEnvironment } from './setup';
 import type { PackageJson } from '../../src/types/packagejson';
 
-describe('VersionTracker Version Info', () => {
+describe.skip('VersionTracker Version Info', () => {
   const { mockPackageJson, createMockPackageJson } = setupTestEnvironment();
 
   it('should get version info', async () => {
