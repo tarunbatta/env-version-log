@@ -6,12 +6,12 @@
   "types": "dist/index.d.ts",
   "scripts": {
     "build": "npm run test:coverage && tsc",
-    "test": "jest",
+    "test": "jest --silent --verbose --coverage --testLocationInResults",
     "test:watch": "jest --watch",
     "test:coverage": "jest --coverage --ci",
     "lint": "npx eslint . --ext .ts",
     "lint:fix": "npx eslint . --ext .ts --fix",
-    "prepare": "husky install"
+    "prepare": "husky"
   },
   "repository": {
     "type": "git",
