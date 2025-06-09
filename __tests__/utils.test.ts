@@ -1,15 +1,21 @@
 import { BuildNumberUtils } from '../src/utils/build-number';
 import { FileOperations } from '../src/utils/file-operations';
-import * as fs from 'fs';
 import * as path from 'path';
+import * as fs from 'fs';
 import {
   PackageJsonNotFoundError,
   PackageJsonReadError,
   PackageJsonWriteError,
 } from '../src/types/errors';
 
-jest.mock('fs');
 jest.mock('path');
+jest.mock('fs', () => ({
+  existsSync: jest.fn(),
+  promises: {
+    readFile: jest.fn(),
+    writeFile: jest.fn(),
+  },
+}));
 
 describe('BuildNumberUtils', () => {
   describe('getNextBuildNumber', () => {
@@ -35,15 +41,20 @@ describe('BuildNumberUtils', () => {
 describe('FileOperations', () => {
   const mockPackageJsonPath = '/test/package.json';
   const mockPackageJson = {
-    name: 'test-package',
+    name: 'test-app',
     version: '1.0.0',
-    buildNumber: '1',
+    versionStamper: {
+      buildNumber: '1',
+      lastDeployed: '2024-03-19T12:00:00.000Z',
+      environment: 'test',
+    },
   };
 
   beforeEach(() => {
     jest.clearAllMocks();
     (path.join as jest.Mock).mockReturnValue(mockPackageJsonPath);
     (path.dirname as jest.Mock).mockReturnValue('/test');
+    (path.parse as jest.Mock).mockReturnValue({ root: '/' });
   });
 
   describe('findPackageJson', () => {
@@ -64,45 +75,42 @@ describe('FileOperations', () => {
   });
 
   describe('readPackageJson', () => {
-    it('should read and parse package.json successfully', () => {
-      (fs.readFileSync as jest.Mock).mockReturnValue(JSON.stringify(mockPackageJson));
-      const result = FileOperations.readPackageJson(mockPackageJsonPath);
+    it('should read and parse package.json successfully', async () => {
+      (fs.promises.readFile as jest.Mock).mockResolvedValue(JSON.stringify(mockPackageJson));
+      const result = await FileOperations.readPackageJson(mockPackageJsonPath);
       expect(result).toEqual(mockPackageJson);
     });
 
-    it('should throw PackageJsonReadError on read failure', () => {
-      (fs.readFileSync as jest.Mock).mockImplementation(() => {
-        throw new Error('Read error');
-      });
-      expect(() => FileOperations.readPackageJson(mockPackageJsonPath)).toThrow(
+    it('should throw PackageJsonReadError on read failure', async () => {
+      (fs.promises.readFile as jest.Mock).mockRejectedValue(new Error('Read error'));
+      await expect(FileOperations.readPackageJson(mockPackageJsonPath)).rejects.toThrow(
         PackageJsonReadError
       );
     });
 
-    it('should throw PackageJsonReadError on parse failure', () => {
-      (fs.readFileSync as jest.Mock).mockReturnValue('invalid json');
-      expect(() => FileOperations.readPackageJson(mockPackageJsonPath)).toThrow(
+    it('should throw PackageJsonReadError on parse failure', async () => {
+      (fs.promises.readFile as jest.Mock).mockResolvedValue('invalid json');
+      await expect(FileOperations.readPackageJson(mockPackageJsonPath)).rejects.toThrow(
         PackageJsonReadError
       );
     });
   });
 
   describe('writePackageJson', () => {
-    it('should write package.json successfully', () => {
-      FileOperations.writePackageJson(mockPackageJsonPath, mockPackageJson);
-      expect(fs.writeFileSync).toHaveBeenCalledWith(
+    it('should write package.json successfully', async () => {
+      await FileOperations.writePackageJson(mockPackageJsonPath, mockPackageJson);
+      expect(fs.promises.writeFile).toHaveBeenCalledWith(
         mockPackageJsonPath,
-        JSON.stringify(mockPackageJson, null, 2) + '\n'
+        JSON.stringify(mockPackageJson, null, 2) + '\n',
+        'utf8'
       );
     });
 
-    it('should throw PackageJsonWriteError on write failure', () => {
-      (fs.writeFileSync as jest.Mock).mockImplementation(() => {
-        throw new Error('Write error');
-      });
-      expect(() => FileOperations.writePackageJson(mockPackageJsonPath, mockPackageJson)).toThrow(
-        PackageJsonWriteError
-      );
+    it('should throw PackageJsonWriteError on write failure', async () => {
+      (fs.promises.writeFile as jest.Mock).mockRejectedValue(new Error('Write error'));
+      await expect(
+        FileOperations.writePackageJson(mockPackageJsonPath, mockPackageJson)
+      ).rejects.toThrow(PackageJsonWriteError);
     });
   });
 });

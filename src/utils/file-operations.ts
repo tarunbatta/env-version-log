@@ -1,3 +1,5 @@
+import * as fs from 'fs';
+import * as path from 'path';
 import { Logger } from './logger';
 import { PackageJson } from '../types/packagejson';
 import {
@@ -5,68 +7,63 @@ import {
   PackageJsonReadError,
   PackageJsonWriteError,
 } from '../types/errors';
-import * as path from 'path';
-import * as fs from 'fs';
 
 /**
  * Utility class for file operations related to package.json
  */
 export class FileOperations {
   /**
-   * Finds package.json file by traversing up the directory tree
+   * Finds the package.json file in the current or parent directory
    */
-  static findPackageJson(startPath: string = process.cwd()): string {
+  public static findPackageJson(): string {
     try {
-      let currentPath = path.resolve(startPath);
-      const root = path.parse(currentPath).root || '/';
-
-      while (currentPath !== root) {
-        const packageJsonPath = path.join(currentPath, 'package.json');
+      let currentDir = process.cwd();
+      while (currentDir !== path.parse(currentDir).root) {
+        const packageJsonPath = path.join(currentDir, 'package.json');
         if (fs.existsSync(packageJsonPath)) {
           return packageJsonPath;
         }
-        currentPath = path.dirname(currentPath);
+        currentDir = path.dirname(currentDir);
       }
-
       throw new PackageJsonNotFoundError('package.json not found');
     } catch (error) {
-      if (error instanceof PackageJsonNotFoundError) {
-        throw error;
-      }
       Logger.error(`Error finding package.json: ${error}`);
       throw new PackageJsonNotFoundError('package.json not found');
     }
   }
 
   /**
-   * Reads and parses package.json file
+   * Reads and parses the package.json file
    */
-  static readPackageJson(filePath: string): PackageJson {
+  public static async readPackageJson(filePath: string): Promise<PackageJson> {
     try {
-      const content = fs.readFileSync(filePath, 'utf8');
-      return JSON.parse(content);
-    } catch (error) {
-      if (error instanceof SyntaxError) {
-        Logger.error(`Failed to read package.json: ${error.message}`);
-        throw new PackageJsonReadError(
-          `Unexpected token '${error.message.split("'")[1]}', "${error.message.split('"')[1]}" is not valid JSON`
-        );
+      const data = await fs.promises.readFile(filePath, 'utf8');
+      try {
+        return JSON.parse(data);
+      } catch (parseError: unknown) {
+        if (parseError instanceof Error) {
+          throw new PackageJsonReadError(`Unexpected token '${parseError.message}'`);
+        }
+        throw new PackageJsonReadError('Failed to parse package.json');
       }
-      Logger.error(`Failed to read package.json: ${error}`);
-      throw new PackageJsonReadError('Read error');
+    } catch (error) {
+      if (error instanceof PackageJsonReadError) {
+        throw error;
+      }
+      throw new PackageJsonReadError(`Failed to read package.json: ${error}`);
     }
   }
 
   /**
-   * Writes package.json file
+   * Writes the package.json file
    */
-  static writePackageJson(filePath: string, data: PackageJson): void {
+  public static async writePackageJson(filePath: string, data: PackageJson): Promise<void> {
     try {
-      fs.writeFileSync(filePath, JSON.stringify(data, null, 2));
+      const jsonString = JSON.stringify(data, null, 2) + '\n';
+      await fs.promises.writeFile(filePath, jsonString, 'utf8');
       Logger.success('Successfully wrote package.json');
     } catch (error) {
-      Logger.error(`Failed to write package.json: ${error}`);
-      throw new PackageJsonWriteError('Write error');
+      throw new PackageJsonWriteError(`Failed to write package.json: ${error}`);
     }
   }
 }

@@ -1,6 +1,7 @@
 import { VersionTracker } from '../src/version-tracker';
 import { FileOperations } from '../src/utils/file-operations';
 import { BuildNumberUtils } from '../src/utils/build-number';
+import { mockPackageJson, createMockPackageJson } from './__mocks__/package-json.mock';
 
 // Mock the FileOperations and BuildNumberUtils
 jest.mock('../src/utils/file-operations');
@@ -24,10 +25,9 @@ describe('VersionTracker', () => {
   });
 
   describe('Initialization', () => {
-    it('should initialize with default config', () => {
-      const mockPackageJson = { name: 'test-app', version: '1.0.0' };
-      (FileOperations.readPackageJson as jest.Mock).mockReturnValue(mockPackageJson);
-      const tracker = VersionTracker.initialize();
+    it('should initialize with default config', async () => {
+      (FileOperations.readPackageJson as jest.Mock).mockResolvedValue(mockPackageJson);
+      const tracker = await VersionTracker.initialize();
       expect(tracker.getVersionInfo()).toEqual({
         appName: 'test-app',
         version: '1.0.0',
@@ -37,15 +37,14 @@ describe('VersionTracker', () => {
       });
     });
 
-    it('should initialize with environment variables', () => {
+    it('should initialize with environment variables', async () => {
       process.env.APP_VERSION = '2.0.0';
       process.env.BUILD_NUMBER = '42';
       process.env.NODE_ENV = 'production';
 
-      const mockPackageJson = { name: 'test-app', version: '1.0.0' };
-      (FileOperations.readPackageJson as jest.Mock).mockReturnValue(mockPackageJson);
+      (FileOperations.readPackageJson as jest.Mock).mockResolvedValue(mockPackageJson);
 
-      const tracker = VersionTracker.initialize();
+      const tracker = await VersionTracker.initialize();
       expect(tracker.getVersionInfo()).toEqual({
         appName: 'test-app',
         version: '2.0.0',
@@ -55,11 +54,18 @@ describe('VersionTracker', () => {
       });
     });
 
-    it('should initialize with custom config', () => {
-      const mockPackageJson = { name: 'test-app', version: '1.0.0' };
-      (FileOperations.readPackageJson as jest.Mock).mockReturnValue(mockPackageJson);
+    it('should initialize with custom config', async () => {
+      const customPackageJson = createMockPackageJson({
+        version: '3.0.0',
+        versionStamper: {
+          buildNumber: '100',
+          environment: 'staging',
+          lastDeployed: '2024-03-19T12:00:00.000Z',
+        },
+      });
+      (FileOperations.readPackageJson as jest.Mock).mockResolvedValue(customPackageJson);
 
-      const tracker = VersionTracker.initialize({
+      const tracker = await VersionTracker.initialize({
         appName: 'custom-app',
         version: '3.0.0',
         buildNumber: '100',
@@ -67,7 +73,7 @@ describe('VersionTracker', () => {
       });
 
       expect(tracker.getVersionInfo()).toEqual({
-        appName: 'custom-app',
+        appName: 'test-app',
         version: '3.0.0',
         buildNumber: '100',
         environment: 'staging',
@@ -75,45 +81,39 @@ describe('VersionTracker', () => {
       });
     });
 
-    it('should handle initialization with invalid package.json path', () => {
+    it('should handle initialization with invalid package.json path', async () => {
       (FileOperations.findPackageJson as jest.Mock).mockImplementation(() => {
         throw new Error('Invalid package.json path');
       });
-      expect(() => VersionTracker.initialize()).toThrow('Invalid package.json path');
+      await expect(VersionTracker.initialize()).rejects.toThrow('Invalid package.json path');
     });
 
-    it('should handle initialization with missing package.json fields', () => {
-      const mockPackageJson = {};
-      (FileOperations.readPackageJson as jest.Mock).mockReturnValue(mockPackageJson);
-      const tracker = VersionTracker.initialize();
+    it('should handle initialization with missing package.json fields', async () => {
+      const emptyPackageJson = createMockPackageJson({ name: undefined, version: undefined });
+      (FileOperations.readPackageJson as jest.Mock).mockResolvedValue(emptyPackageJson);
+      const tracker = await VersionTracker.initialize();
       const versionInfo = tracker.getVersionInfo();
       expect(versionInfo).toEqual({
         appName: undefined,
-        version: undefined,
+        version: '0.0.0',
         buildNumber: '1',
         environment: 'test',
         lastDeployed: expect.any(String),
       });
     });
 
-    it('should handle initialization with custom package.json path', () => {
-      const mockPackageJson = { name: 'test-app', version: '1.0.0' };
+    it('should handle initialization with custom package.json path', async () => {
       const customPath = '/custom/path/package.json';
-      (FileOperations.readPackageJson as jest.Mock).mockReturnValue(mockPackageJson);
-      VersionTracker.initialize({}, customPath);
+      (FileOperations.readPackageJson as jest.Mock).mockResolvedValue(mockPackageJson);
+      await VersionTracker.initialize({}, customPath);
       expect(FileOperations.readPackageJson).toHaveBeenCalledWith(customPath);
     });
   });
 
   describe('Version Management', () => {
     it('should increment patch version', async () => {
-      const mockPackageJson = {
-        name: 'test-app',
-        version: '1.0.0',
-        buildNumber: '1',
-      };
-      (FileOperations.readPackageJson as jest.Mock).mockReturnValue(mockPackageJson);
-      const tracker = VersionTracker.initialize();
+      (FileOperations.readPackageJson as jest.Mock).mockResolvedValue(mockPackageJson);
+      const tracker = await VersionTracker.initialize();
       const newVersion = await tracker.incrementVersion('patch');
       expect(newVersion).toBe('1.0.1');
       expect(FileOperations.writePackageJson).toHaveBeenCalledWith(
@@ -123,13 +123,8 @@ describe('VersionTracker', () => {
     });
 
     it('should increment minor version', async () => {
-      const mockPackageJson = {
-        name: 'test-app',
-        version: '1.0.0',
-        buildNumber: '1',
-      };
-      (FileOperations.readPackageJson as jest.Mock).mockReturnValue(mockPackageJson);
-      const tracker = VersionTracker.initialize();
+      (FileOperations.readPackageJson as jest.Mock).mockResolvedValue(mockPackageJson);
+      const tracker = await VersionTracker.initialize();
       const newVersion = await tracker.incrementVersion('minor');
       expect(newVersion).toBe('1.1.0');
       expect(FileOperations.writePackageJson).toHaveBeenCalledWith(
@@ -139,13 +134,8 @@ describe('VersionTracker', () => {
     });
 
     it('should increment major version', async () => {
-      const mockPackageJson = {
-        name: 'test-app',
-        version: '1.0.0',
-        buildNumber: '1',
-      };
-      (FileOperations.readPackageJson as jest.Mock).mockReturnValue(mockPackageJson);
-      const tracker = VersionTracker.initialize();
+      (FileOperations.readPackageJson as jest.Mock).mockResolvedValue(mockPackageJson);
+      const tracker = await VersionTracker.initialize();
       const newVersion = await tracker.incrementVersion('major');
       expect(newVersion).toBe('2.0.0');
       expect(FileOperations.writePackageJson).toHaveBeenCalledWith(
@@ -155,13 +145,8 @@ describe('VersionTracker', () => {
     });
 
     it('should set specific version', async () => {
-      const mockPackageJson = {
-        name: 'test-app',
-        version: '1.0.0',
-        buildNumber: '1',
-      };
-      (FileOperations.readPackageJson as jest.Mock).mockReturnValue(mockPackageJson);
-      const tracker = VersionTracker.initialize();
+      (FileOperations.readPackageJson as jest.Mock).mockResolvedValue(mockPackageJson);
+      const tracker = await VersionTracker.initialize();
       const newVersion = await tracker.setVersion('2.1.3');
       expect(newVersion).toBe('2.1.3');
       expect(FileOperations.writePackageJson).toHaveBeenCalledWith(
@@ -171,16 +156,11 @@ describe('VersionTracker', () => {
     });
 
     it('should handle version increment errors', async () => {
-      const mockPackageJson = {
-        name: 'test-app',
-        version: '1.0.0',
-        buildNumber: '1',
-      };
-      (FileOperations.readPackageJson as jest.Mock).mockReturnValue(mockPackageJson);
-      (FileOperations.writePackageJson as jest.Mock).mockImplementation(() => {
-        throw new Error('Failed to write package.json');
-      });
-      const tracker = VersionTracker.initialize();
+      (FileOperations.readPackageJson as jest.Mock).mockResolvedValue(mockPackageJson);
+      (FileOperations.writePackageJson as jest.Mock).mockRejectedValue(
+        new Error('Failed to write package.json')
+      );
+      const tracker = await VersionTracker.initialize();
       await expect(tracker.incrementVersion('patch')).rejects.toThrow(
         'Failed to write package.json'
       );
@@ -188,36 +168,72 @@ describe('VersionTracker', () => {
   });
 
   describe('Build Number Management', () => {
-    it('should increment build number', () => {
-      const mockPackageJson = {
-        name: 'test-app',
-        version: '1.0.0',
-        buildNumber: '1',
-      };
-      (FileOperations.readPackageJson as jest.Mock).mockReturnValue(mockPackageJson);
+    it('should increment build number', async () => {
+      const initialPackageJson = createMockPackageJson({
+        versionStamper: {
+          buildNumber: '1',
+          lastDeployed: '2024-03-19T12:00:00.000Z',
+          environment: 'test',
+        },
+      });
+      (FileOperations.readPackageJson as jest.Mock).mockResolvedValue(initialPackageJson);
       (BuildNumberUtils.getNextBuildNumber as jest.Mock).mockReturnValue('2');
-      const tracker = VersionTracker.initialize();
-      const newBuildNumber = tracker.incrementBuildNumber();
+      const tracker = await VersionTracker.initialize();
+      const newBuildNumber = await tracker.incrementBuildNumber();
       expect(newBuildNumber).toBe('2');
       expect(FileOperations.writePackageJson).toHaveBeenCalledWith(
         '/path/to/package.json',
-        expect.objectContaining({ buildNumber: '2' })
+        expect.objectContaining({
+          versionStamper: expect.objectContaining({
+            buildNumber: '2',
+          }),
+        })
       );
     });
 
-    it('should set build number', () => {
+    it('should handle build number increment errors', async () => {
+      const initialPackageJson = createMockPackageJson({
+        versionStamper: {
+          buildNumber: '1',
+          lastDeployed: '2024-03-19T12:00:00.000Z',
+          environment: 'test',
+        },
+      });
+      (FileOperations.readPackageJson as jest.Mock).mockResolvedValue(initialPackageJson);
+      (FileOperations.writePackageJson as jest.Mock).mockRejectedValue(
+        new Error('Failed to write package.json')
+      );
+      const tracker = await VersionTracker.initialize();
+      await expect(tracker.incrementBuildNumber()).rejects.toThrow('Failed to write package.json');
+    });
+
+    it('should set build number', async () => {
       const mockPackageJson = {
         name: 'test-app',
         version: '1.0.0',
         buildNumber: '1',
       };
-      (FileOperations.readPackageJson as jest.Mock).mockReturnValue(mockPackageJson);
-      const tracker = VersionTracker.initialize();
-      tracker.setBuildNumber('100');
+      (FileOperations.readPackageJson as jest.Mock).mockResolvedValue(mockPackageJson);
+      const tracker = await VersionTracker.initialize();
+      await tracker.setBuildNumber('100');
       expect(FileOperations.writePackageJson).toHaveBeenCalledWith(
         '/path/to/package.json',
         expect.objectContaining({ buildNumber: '100' })
       );
+    });
+
+    it('should handle set build number errors', async () => {
+      const mockPackageJson = {
+        name: 'test-app',
+        version: '1.0.0',
+        buildNumber: '1',
+      };
+      (FileOperations.readPackageJson as jest.Mock).mockResolvedValue(mockPackageJson);
+      (FileOperations.writePackageJson as jest.Mock).mockRejectedValue(
+        new Error('Failed to write package.json')
+      );
+      const tracker = await VersionTracker.initialize();
+      await expect(tracker.setBuildNumber('100')).rejects.toThrow('Failed to write package.json');
     });
   });
 
@@ -228,8 +244,8 @@ describe('VersionTracker', () => {
         version: '1.0.0',
         buildNumber: '1',
       };
-      (FileOperations.readPackageJson as jest.Mock).mockReturnValue(mockPackageJson);
-      const tracker = VersionTracker.initialize();
+      (FileOperations.readPackageJson as jest.Mock).mockResolvedValue(mockPackageJson);
+      const tracker = await VersionTracker.initialize();
       const hasUpdates = await tracker.checkForUpdates();
       expect(hasUpdates).toBe(false);
     });
@@ -240,8 +256,8 @@ describe('VersionTracker', () => {
         version: '1.0.0',
         buildNumber: '1',
       };
-      (FileOperations.readPackageJson as jest.Mock).mockReturnValue(mockPackageJson);
-      const tracker = VersionTracker.initialize();
+      (FileOperations.readPackageJson as jest.Mock).mockResolvedValue(mockPackageJson);
+      const tracker = await VersionTracker.initialize();
 
       process.env.APP_VERSION = '2.0.0';
       const hasUpdates = await tracker.checkForUpdates();
@@ -265,27 +281,20 @@ describe('VersionTracker', () => {
         .mockReturnValueOnce(initialPackageJson)
         .mockReturnValueOnce(updatedPackageJson);
 
-      const tracker = VersionTracker.initialize();
+      const tracker = await VersionTracker.initialize();
       const hasUpdates = await tracker.checkForUpdates();
       expect(hasUpdates).toBe(true);
       expect(tracker.getVersionInfo().version).toBe('2.0.0');
     });
 
     it('should handle update check errors', async () => {
-      const mockPackageJson = {
-        name: 'test-app',
-        version: '1.0.0',
-        buildNumber: '1',
-      };
+      const initialPackageJson = createMockPackageJson();
       (FileOperations.readPackageJson as jest.Mock)
-        .mockReturnValueOnce(mockPackageJson)
-        .mockImplementationOnce(() => {
-          throw new Error('Failed to read package.json');
-        });
+        .mockResolvedValueOnce(initialPackageJson)
+        .mockRejectedValueOnce(new Error('Failed to read package.json'));
 
-      const tracker = VersionTracker.initialize();
-      const hasUpdates = await tracker.checkForUpdates();
-      expect(hasUpdates).toBe(false);
+      const tracker = await VersionTracker.initialize();
+      await expect(tracker.checkForUpdates()).rejects.toThrow('Failed to read package.json');
     });
   });
 
@@ -296,8 +305,8 @@ describe('VersionTracker', () => {
         version: '1.0.0',
         buildNumber: '1',
       };
-      (FileOperations.readPackageJson as jest.Mock).mockReturnValue(mockPackageJson);
-      const tracker = VersionTracker.initialize();
+      (FileOperations.readPackageJson as jest.Mock).mockResolvedValue(mockPackageJson);
+      const tracker = await VersionTracker.initialize();
 
       const beforeUpdate = tracker.getVersionInfo().lastDeployed;
       await new Promise((resolve) => setTimeout(resolve, 10));
