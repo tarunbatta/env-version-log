@@ -8,14 +8,15 @@
     "build": "npm run test:coverage && tsc",
     "test": "jest --silent --verbose --coverage --testLocationInResults",
     "test:watch": "jest --watch",
-    "test:coverage": "jest --coverage --ci",
+    "test:coverage": "node --max-old-space-size=4096 node_modules/.bin/jest --coverage --ci",
     "lint": "npx eslint . --ext .ts",
     "lint:fix": "npx eslint . --ext .ts --fix",
     "prepare": "husky",
     "prepublishOnly": "npm run build",
     "preversion": "npm run lint",
     "version": "npm run format && git add -A src",
-    "postversion": "git push && git push --tags"
+    "postversion": "git push && git push --tags",
+    "start": "node dist/index.js"
   },
   "repository": {
     "type": "git",

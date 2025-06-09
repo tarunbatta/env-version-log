@@ -19,4 +19,13 @@ module.exports = {
       statements: 80,
     },
   },
+  // Performance optimizations
+  maxWorkers: '50%', // Use 50% of available CPU cores
+  testTimeout: 1000, // 1 second timeout per test
+  maxConcurrency: 5, // Run 5 tests in parallel
+  bail: 1, // Stop on first failure
+  verbose: false, // Reduce output verbosity
+  // Optimize coverage collection
+  collectCoverageFrom: ['src/**/*.ts', '!src/**/*.d.ts', '!src/types/**/*.ts'],
+  coveragePathIgnorePatterns: ['/node_modules/', '/dist/'],
 };

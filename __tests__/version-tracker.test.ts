@@ -2,10 +2,19 @@ import { VersionTracker } from '../src/version-tracker';
 import { FileOperations } from '../src/utils/file-operations';
 import { BuildNumberUtils } from '../src/utils/build-number';
 import { mockPackageJson, createMockPackageJson } from './__mocks__/package-json.mock';
+import { Logger } from '../src/utils/logger';
 
 // Mock the FileOperations and BuildNumberUtils
 jest.mock('../src/utils/file-operations');
 jest.mock('../src/utils/build-number');
+jest.mock('../src/utils/logger', () => ({
+  Logger: {
+    info: jest.fn(),
+    error: jest.fn(),
+    warn: jest.fn(),
+    success: jest.fn(),
+  },
+}));
 
 describe('VersionTracker', () => {
   const originalEnv = process.env;
@@ -16,6 +25,8 @@ describe('VersionTracker', () => {
     (VersionTracker as any).instance = undefined;
     // Mock findPackageJson to return a path
     (FileOperations.findPackageJson as jest.Mock).mockReturnValue('/path/to/package.json');
+    // Mock writePackageJson to resolve successfully by default
+    (FileOperations.writePackageJson as jest.Mock).mockResolvedValue(undefined);
     // Reset process.env
     process.env = { ...originalEnv };
   });
@@ -64,6 +75,9 @@ describe('VersionTracker', () => {
         },
       });
       (FileOperations.readPackageJson as jest.Mock).mockResolvedValue(customPackageJson);
+
+      // Set NODE_ENV to undefined to ensure it doesn't override our config
+      process.env.NODE_ENV = undefined;
 
       const tracker = await VersionTracker.initialize({
         appName: 'custom-app',
@@ -208,32 +222,40 @@ describe('VersionTracker', () => {
     });
 
     it('should set build number', async () => {
-      const mockPackageJson = {
-        name: 'test-app',
-        version: '1.0.0',
-        buildNumber: '1',
-      };
-      (FileOperations.readPackageJson as jest.Mock).mockResolvedValue(mockPackageJson);
+      const initialPackageJson = createMockPackageJson({
+        versionStamper: {
+          buildNumber: '1',
+          lastDeployed: '2024-03-19T12:00:00.000Z',
+          environment: 'test',
+        },
+      });
+      (FileOperations.readPackageJson as jest.Mock).mockResolvedValue(initialPackageJson);
       const tracker = await VersionTracker.initialize();
-      await tracker.setBuildNumber('100');
+      await tracker.setBuildNumber('42');
       expect(FileOperations.writePackageJson).toHaveBeenCalledWith(
         '/path/to/package.json',
-        expect.objectContaining({ buildNumber: '100' })
+        expect.objectContaining({
+          versionStamper: expect.objectContaining({
+            buildNumber: '42',
+          }),
+        })
       );
     });
 
     it('should handle set build number errors', async () => {
-      const mockPackageJson = {
-        name: 'test-app',
-        version: '1.0.0',
-        buildNumber: '1',
-      };
-      (FileOperations.readPackageJson as jest.Mock).mockResolvedValue(mockPackageJson);
+      const initialPackageJson = createMockPackageJson({
+        versionStamper: {
+          buildNumber: '1',
+          lastDeployed: '2024-03-19T12:00:00.000Z',
+          environment: 'test',
+        },
+      });
+      (FileOperations.readPackageJson as jest.Mock).mockResolvedValue(initialPackageJson);
       (FileOperations.writePackageJson as jest.Mock).mockRejectedValue(
         new Error('Failed to write package.json')
       );
       const tracker = await VersionTracker.initialize();
-      await expect(tracker.setBuildNumber('100')).rejects.toThrow('Failed to write package.json');
+      await expect(tracker.setBuildNumber('42')).rejects.toThrow('Failed to write package.json');
     });
   });
 
@@ -295,6 +317,9 @@ describe('VersionTracker', () => {
 
       const tracker = await VersionTracker.initialize();
       await expect(tracker.checkForUpdates()).rejects.toThrow('Failed to read package.json');
+      expect(Logger.error).toHaveBeenCalledWith(
+        'Failed to check for updates: Error: Failed to read package.json'
+      );
     });
   });
 

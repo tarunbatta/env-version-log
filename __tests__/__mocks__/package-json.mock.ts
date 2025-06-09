@@ -32,3 +32,38 @@ export const createMockPackageJson = (overrides: Partial<PackageJson> = {}) => (
     ...(overrides.versionStamper || {}),
   },
 });
+
+describe('Package JSON Mock', () => {
+  it('should create a mock package.json with default values', () => {
+    const result = createMockPackageJson();
+    expect(result).toEqual(mockPackageJson);
+  });
+
+  it('should override default values with custom values', () => {
+    const customValues = {
+      name: 'custom-app',
+      version: '2.0.0',
+      versionStamper: {
+        buildNumber: '42',
+        environment: 'production',
+        lastDeployed: '2024-03-20T12:00:00.000Z',
+      },
+    };
+    const result = createMockPackageJson(customValues);
+    expect(result.name).toBe('custom-app');
+    expect(result.version).toBe('2.0.0');
+    expect(result.versionStamper.buildNumber).toBe('42');
+    expect(result.versionStamper.environment).toBe('production');
+    expect(result.versionStamper.lastDeployed).toBe('2024-03-20T12:00:00.000Z');
+  });
+
+  it('should preserve default values for unspecified fields', () => {
+    const customValues = {
+      name: 'custom-app',
+    };
+    const result = createMockPackageJson(customValues);
+    expect(result.name).toBe('custom-app');
+    expect(result.version).toBe(mockPackageJson.version);
+    expect(result.versionStamper).toEqual(mockPackageJson.versionStamper);
+  });
+});

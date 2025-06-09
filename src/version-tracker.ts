@@ -164,8 +164,9 @@ export class VersionTracker {
       Logger.success(this.versionInfo);
       return newBuildNumber;
     } catch (error) {
-      Logger.error(`Failed to increment build number: ${error}`);
-      throw error;
+      const errorMessage = error instanceof Error ? error.message : String(error);
+      Logger.error(`Failed to increment build number: ${errorMessage}`);
+      throw new Error(errorMessage);
     }
   }
 
@@ -191,8 +192,9 @@ export class VersionTracker {
       this.versionInfo.buildNumber = buildNumber;
       Logger.success(this.versionInfo);
     } catch (error) {
-      Logger.error(`Failed to set build number: ${error}`);
-      throw error;
+      const errorMessage = error instanceof Error ? error.message : String(error);
+      Logger.error(`Failed to set build number: ${errorMessage}`);
+      throw new Error(errorMessage);
     }
   }
 
@@ -229,8 +231,9 @@ export class VersionTracker {
       Logger.success(this.versionInfo);
       return newVersion;
     } catch (error) {
-      Logger.error(`Failed to increment version: ${error}`);
-      throw error;
+      const errorMessage = error instanceof Error ? error.message : String(error);
+      Logger.error(`Failed to increment version: ${errorMessage}`);
+      throw new Error(errorMessage);
     }
   }
 
