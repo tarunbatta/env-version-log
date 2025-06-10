@@ -9,9 +9,9 @@ export class Logger {
     const parts = [];
     if (info.appName) parts.push(chalk.cyan(info.appName));
     if (info.version) parts.push(chalk.green(`v${info.version}`));
-    if (info.buildNumber) parts.push(chalk.yellow(`#${info.buildNumber}`));
     if (info.environment) parts.push(chalk.magenta(`[${info.environment}]`));
-    if (info.lastUpdated) parts.push(chalk.gray(`(Updated: ${new Date(info.lastUpdated).toLocaleString()})`));
+    if (info.lastUpdated)
+      parts.push(chalk.gray(`(Updated: ${new Date(info.lastUpdated).toLocaleString()})`));
     return parts.join(' ');
   }
 
@@ -56,7 +56,6 @@ export class Logger {
     console.log(`📋 App Name: ${info.appName || 'N/A'}`);
     console.log(`${envEmoji} Environment: ${info.environment}`);
     console.log(`🔢 Version: ${info.version || 'N/A'}`);
-    console.log(`🏗️  Build: ${info.buildNumber}`);
     console.log(`⏰ Last Updated: ${timestamp}`);
     console.log('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n');
   }

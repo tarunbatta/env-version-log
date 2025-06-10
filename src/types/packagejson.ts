@@ -2,7 +2,6 @@ export interface PackageJson {
   name?: string;
   version?: string;
   versionTracker?: {
-    buildNumber: string;
     lastDeployed: string;
     environment: string;
   };

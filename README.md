@@ -1,6 +1,6 @@
 # Env Version Log
 
-A lightweight TypeScript package for tracking application versions and build numbers with environment awareness.
+A lightweight TypeScript package for tracking application versions with environment awareness.
 
 [![npm version](https://img.shields.io/npm/v/env-version-log.svg?color=blue)](https://www.npmjs.com/package/env-version-log)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
@@ -8,9 +8,9 @@ A lightweight TypeScript package for tracking application versions and build num
 
 ## Features
 
-- 🚀 Simple version and build number tracking
-- 🌍 Environment-aware logging
-- ⚡ In-memory version management
+- 🚀 Automatic version detection from package.json
+- 🌍 Smart environment detection
+- ⚡ Zero configuration needed
 - 🔄 Environment variable support
 - 📝 Beautiful console logging
 - 🔒 TypeScript support with full type definitions
@@ -33,115 +33,134 @@ pnpm add env-version-log
 ## Quick Start
 
 ```typescript
-import { createVersionTracker } from 'env-version-log';
+import { VersionTracker } from 'env-version-log';
 
-// Initialize with optional config
-const tracker = await createVersionTracker({
-  appName: 'My App',
-  version: '1.0.0',
-  buildNumber: '1',
-  environment: 'development'
-});
+// Initialize with automatic detection
+const tracker = await VersionTracker.initialize();
 
 // Log version info
 tracker.logVersionInfo();
-
-// Increment version/build
-tracker.incrementVersion('patch'); // Increments patch version
-tracker.incrementBuildNumber();    // Increments build number
-
-// Check for updates from env vars
-await tracker.checkForUpdates();
 ```
 
-## Environment Variables
+## Automatic Detection
 
-The package checks for these environment variables:
-- `APP_VERSION`: Overrides the version number
-- `BUILD_NUMBER`: Overrides the build number
-- `NODE_ENV`: Sets the environment (development/production)
+The package automatically detects:
+
+1. **App Name & Version**
+   - Reads from your package.json (configurable path)
+   - No configuration needed
+   - Falls back to environment variables if needed
+
+2. **Environment**
+   - Smart detection based on:
+     - Environment variables (NODE_ENV)
+     - Build-time environment (Vite's MODE)
+     - Runtime context (hostname, URL patterns)
+   - Common patterns:
+     - Development: localhost, 127.0.0.1
+     - Staging: URLs containing 'staging' or 'test'
+     - Production: URLs containing 'prod' or 'production'
+
+## Environment Variables (Optional)
+
+You can override the automatic detection using environment variables:
+
+```bash
+# .env.local
+NODE_ENV=development  # Optional: Override environment
+APP_VERSION=1.0.0     # Optional: Override version
+APP_NAME=my-app       # Optional: Override app name
+```
 
 ## API
 
-### createVersionTracker(config?: Partial<VersionInfo>)
+### VersionTracker.initialize(config?: Partial<VersionInfo>)
 
-Creates a new VersionTracker instance.
+Creates a new VersionTracker instance with automatic detection.
 
 ```typescript
-const tracker = await createVersionTracker({
-  appName: 'My App',
-  version: '1.0.0',
-  buildNumber: '1',
-  environment: 'development'
+// Automatic detection
+const tracker = await VersionTracker.initialize();
+
+// With custom config
+const tracker = await VersionTracker.initialize({
+  appName: 'Custom App',
+  version: '2.0.0',
+  environment: 'staging'
 });
 ```
 
 ### VersionTracker Methods
 
-- `logVersionInfo()`: Logs current version information
-- `getVersionInfo()`: Returns current version info
-- `updateTimestamp()`: Updates the last updated timestamp
-- `checkForUpdates()`: Checks for version updates from environment variables
-- `incrementBuildNumber()`: Increments the build number
-- `setBuildNumber(buildNumber: string)`: Sets a specific build number
-- `incrementVersion(type: 'major' | 'minor' | 'patch')`: Increments version number
-- `setVersion(version: string)`: Sets a specific version
-
-## Types
+#### getVersionInfo(): VersionInfo
+Returns the current version information.
 
 ```typescript
-interface VersionInfo {
-  appName: string;
-  version: string;
-  buildNumber: string;
-  environment: string;
-  lastUpdated?: Date;
-}
-
-type VersionType = 'major' | 'minor' | 'patch';
+const info = tracker.getVersionInfo();
+// {
+//   appName: 'my-app',
+//   version: '1.0.0',
+//   environment: 'development',
+//   lastUpdated: '2024-03-20T12:00:00.000Z'
+// }
 ```
 
-## Example Output
+#### logVersionInfo(): void
+Logs the current version information in a beautiful format.
 
+```typescript
+tracker.logVersionInfo();
+// 📦 Application Information:
+// ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+// 📋 App Name: my-app
+// 🔧 Environment: development
+// 🔢 Version: 1.0.0
+// ⏰ Last Updated: 3/20/2024, 12:00:00 PM
+// ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 ```
-📦 Application Information:
-━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-📋 App Name: My App
-🔧 Environment: development
-🔢 Version: 1.0.0
-🏗️  Build: 1
-⏰ Last Updated: 3/14/2024, 2:30:45 PM
-━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+#### checkForUpdates(): Promise<boolean>
+Checks for updates from environment variables.
+
+```typescript
+const hasUpdates = await tracker.checkForUpdates();
 ```
+
+### Utility Functions
+
+#### getAppVersion(packageJsonPath?: string): Promise<string | undefined>
+Gets the application version from package.json or environment variables.
+
+```typescript
+// Default package.json path
+const version = await getAppVersion();
+
+// Custom package.json path
+const version = await getAppVersion('./custom/path/package.json');
+```
+
+#### getAppName(packageJsonPath?: string): Promise<string | undefined>
+Gets the application name from package.json or environment variables.
+
+```typescript
+// Default package.json path
+const name = await getAppName();
+
+// Custom package.json path
+const name = await getAppName('./custom/path/package.json');
+```
+
+## Browser Support
+
+Works in both Node.js and browser environments:
+
+- Node.js: Uses process.env
+- Browser: Uses import.meta.env (Vite) or process.env (Create React App)
+- Automatic environment detection based on hostname and URL patterns
 
 ## Contributing
 
-Contributions are welcome! Please feel free to submit a Pull Request. For major changes, please open an issue first to discuss what you would like to change.
-
-1. Fork the repository
-2. Create your feature branch (`git checkout -b feature/amazing-feature`)
-3. Commit your changes (`git commit -m 'Add some amazing feature'`)
-4. Push to the branch (`git push origin feature/amazing-feature`)
-5. Open a Pull Request
-
-## Development
-
-```bash
-# Install dependencies
-npm install
-
-# Run tests
-npm test
-
-# Build the package
-npm run build
-
-# Lint the code
-npm run lint
-
-# Format the code
-npm run format
-```
+Contributions are welcome! Please feel free to submit a Pull Request.
 
 ## License
 

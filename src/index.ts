@@ -1,5 +1,4 @@
 import { VersionTracker } from './version-tracker';
-import { BuildNumberUtils } from './utils/build-number';
 import { FileOperations } from './utils/file-operations';
 import { Logger } from './utils/logger';
 import {
@@ -16,9 +15,9 @@ import {
 export { VersionTracker };
 
 // Export utility classes
-export { BuildNumberUtils } from './utils/build-number';
 export { FileOperations } from './utils/file-operations';
 export { Logger } from './utils/logger';
+export { getEnvironment, getAppVersion, getAppName } from './utils/environment';
 
 // Export types
 export type { VersionInfo, VersionTrackerConfig, VersionType, PackageJson };

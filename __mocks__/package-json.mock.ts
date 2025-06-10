@@ -4,7 +4,6 @@ export const mockPackageJson: PackageJson = {
   name: 'test-app',
   version: '1.0.0',
   versionTracker: {
-    buildNumber: '1',
     lastDeployed: '2024-03-20T12:00:00.000Z',
     environment: 'development',
   },
@@ -30,7 +29,6 @@ export const createMockPackageJson = (overrides: Partial<PackageJson> = {}): Pac
     ...mockPackageJson,
     ...overrides,
     versionTracker: {
-      buildNumber: versionTracker?.buildNumber || mockPackageJson.versionTracker!.buildNumber,
       lastDeployed: versionTracker?.lastDeployed || mockPackageJson.versionTracker!.lastDeployed,
       environment: versionTracker?.environment || mockPackageJson.versionTracker!.environment,
     },
@@ -74,17 +72,15 @@ describe('Package JSON Mock', () => {
       name: 'custom-app',
       version: '2.0.0',
       versionTracker: {
-        buildNumber: '42',
-        environment: 'production',
         lastDeployed: '2024-03-20T12:00:00.000Z',
+        environment: 'production',
       },
     };
     const result = createMockPackageJson(customValues);
     expect(result.name).toBe('custom-app');
     expect(result.version).toBe('2.0.0');
-    expect(result.versionTracker!.buildNumber).toBe('42');
-    expect(result.versionTracker!.environment).toBe('production');
     expect(result.versionTracker!.lastDeployed).toBe('2024-03-20T12:00:00.000Z');
+    expect(result.versionTracker!.environment).toBe('production');
   });
 
   it('should preserve default values for unspecified fields', (): void => {

@@ -1,6 +1,6 @@
 import { VersionInfo } from './types/versioninfo';
 import { Logger } from './utils/logger';
-import { getEnvironment, getAppVersion, getBuildNumber } from './utils/environment';
+import { getEnvironment, getAppVersion, getAppName } from './utils/environment';
 
 /**
  * Main class for version and build tracking
@@ -13,19 +13,25 @@ export class VersionTracker {
     this.versionInfo = {
       appName: config.appName || 'Unknown App',
       version: config.version || '0.0.0',
-      buildNumber: config.buildNumber || '1',
       environment: getEnvironment() || config.environment || 'development',
       lastUpdated: new Date().toISOString(),
     };
   }
 
   /**
-   * Initializes the VersionTracker singleton
+   * Initialize the VersionTracker with optional configuration
    */
   public static async initialize(config: Partial<VersionInfo> = {}): Promise<VersionTracker> {
     if (!VersionTracker.instance) {
-      VersionTracker.instance = new VersionTracker(config);
-      Logger.info(VersionTracker.instance.versionInfo);
+      const instance = new VersionTracker(config);
+
+      // Try to get values from environment/package.json
+      const [appName, version] = await Promise.all([getAppName(), getAppVersion()]);
+
+      if (appName) instance.versionInfo.appName = appName;
+      if (version) instance.versionInfo.version = version;
+
+      VersionTracker.instance = instance;
     }
     return VersionTracker.instance;
   }
@@ -42,45 +48,32 @@ export class VersionTracker {
   }
 
   /**
-   * Logs all version information in a formatted way
-   */
-  logVersionInfo(): void {
-    const info = this.getVersionInfo();
-    Logger.logVersionInfo(info);
-  }
-
-  /**
-   * Returns the current version info
+   * Get the current version information
    */
   public getVersionInfo(): VersionInfo {
     return { ...this.versionInfo };
   }
 
   /**
-   * Updates the deployment timestamp and logs version info
+   * Log the current version information
    */
-  public updateDeploymentInfo(): void {
-    this.versionInfo.lastUpdated = new Date().toISOString();
-    Logger.info(this.versionInfo);
+  public logVersionInfo(): void {
+    Logger.logVersionInfo(this.versionInfo);
   }
 
   /**
    * Checks for version updates in env
    */
   public async checkForUpdates(): Promise<boolean> {
-    const versionFromEnv = getAppVersion();
-    const buildNumberFromEnv = getBuildNumber();
-    const environmentFromEnv = getEnvironment();
+    const [versionFromEnv, environmentFromEnv] = await Promise.all([
+      getAppVersion(),
+      Promise.resolve(getEnvironment()),
+    ]);
 
     let hasUpdates = false;
 
     if (versionFromEnv && versionFromEnv !== this.versionInfo.version) {
       this.versionInfo.version = versionFromEnv;
-      hasUpdates = true;
-    }
-
-    if (buildNumberFromEnv && buildNumberFromEnv !== this.versionInfo.buildNumber) {
-      this.versionInfo.buildNumber = buildNumberFromEnv;
       hasUpdates = true;
     }
 
@@ -97,22 +90,11 @@ export class VersionTracker {
   }
 
   /**
-   * Increments the build number
+   * Updates the deployment timestamp and logs version info
    */
-  public incrementBuildNumber(): string {
-    const currentBuildNumber = parseInt(this.versionInfo.buildNumber, 10);
-    const newBuildNumber = isNaN(currentBuildNumber) ? '1' : (currentBuildNumber + 1).toString();
-    this.versionInfo.buildNumber = newBuildNumber;
-    Logger.success(this.versionInfo);
-    return newBuildNumber;
-  }
-
-  /**
-   * Sets a specific build number
-   */
-  public setBuildNumber(buildNumber: string): void {
-    this.versionInfo.buildNumber = buildNumber;
-    Logger.success(this.versionInfo);
+  public updateDeploymentInfo(): void {
+    this.versionInfo.lastUpdated = new Date().toISOString();
+    Logger.info(this.versionInfo);
   }
 
   /**
