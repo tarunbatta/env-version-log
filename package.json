@@ -35,8 +35,7 @@
     "format": "prettier --write \"src/**/*.ts\"",
     "prepare": "husky",
     "postinstall": "husky install",
-    "version-patch": "npm version patch",
-    "publish": "npm publish"
+    "release": "npm version patch && npm publish"
   },
   "lint-staged": {
     "*.ts": [
