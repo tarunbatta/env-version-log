@@ -9,7 +9,7 @@ export class VersionTracker {
   private static instance: VersionTracker;
   private versionInfo: VersionInfo;
 
-  private constructor(config: Partial<VersionInfo> = {}) {
+  private constructor(config: Partial<VersionInfo> & { packageJsonPath?: string } = {}) {
     this.versionInfo = {
       appName: config.appName || 'Unknown App',
       version: config.version || '0.0.0',
@@ -21,12 +21,17 @@ export class VersionTracker {
   /**
    * Initialize the VersionTracker with optional configuration
    */
-  public static async initialize(config: Partial<VersionInfo> = {}): Promise<VersionTracker> {
+  public static async initialize(
+    config: Partial<VersionInfo> & { packageJsonPath?: string } = {}
+  ): Promise<VersionTracker> {
     if (!VersionTracker.instance) {
       const instance = new VersionTracker(config);
 
       // Try to get values from environment/package.json
-      const [appName, version] = await Promise.all([getAppName(), getAppVersion()]);
+      const [appName, version] = await Promise.all([
+        getAppName(config.packageJsonPath),
+        getAppVersion(config.packageJsonPath),
+      ]);
 
       if (appName) instance.versionInfo.appName = appName;
       if (version) instance.versionInfo.version = version;

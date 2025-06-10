@@ -74,7 +74,7 @@ APP_NAME=my-app       # Optional: Override app name
 
 ## API
 
-### VersionTracker.initialize(config?: Partial<VersionInfo>)
+### VersionTracker.initialize(config?: Partial<VersionInfo> & { packageJsonPath?: string })
 
 Creates a new VersionTracker instance with automatic detection.
 
@@ -87,6 +87,11 @@ const tracker = await VersionTracker.initialize({
   appName: 'Custom App',
   version: '2.0.0',
   environment: 'staging'
+});
+
+// With custom package.json path
+const tracker = await VersionTracker.initialize({
+  packageJsonPath: './custom/path/package.json'
 });
 ```
 
