@@ -63,38 +63,47 @@ The package automatically detects:
 
 ## Environment Variables (Optional)
 
-You can override the automatic detection using environment variables:
+You can override the automatic detection using environment variables. The package checks for variables in the following order:
 
-```bash
-# .env.local
-NODE_ENV=development  # Optional: Override environment
-APP_VERSION=1.0.0     # Optional: Override version
-APP_NAME=my-app       # Optional: Override app name
-```
+1. Vite environment variables (VITE_ prefixed)
+2. Regular environment variables (non-VITE_ prefixed)
+3. Default values
 
-### Vite Configuration
+### Configuration Options
 
-For Vite projects, you need to define environment variables to provide the app name and version. You can do this in two ways:
-
-1. In your `vite.config.ts`:
+#### 1. Using Vite Config
 ```typescript
 import { defineConfig } from 'vite';
 
 export default defineConfig({
   define: {
-    'import.meta.env.APP_NAME': JSON.stringify('Your App Name'),
-    'import.meta.env.APP_VERSION': JSON.stringify('1.0.0')
+    'import.meta.env.VITE_APP_NAME': JSON.stringify('Your App Name'),
+    'import.meta.env.VITE_APP_VERSION': JSON.stringify('1.0.0')
   }
 });
 ```
 
-2. Or using a `.env` file with the `VITE_` prefix:
+#### 2. Using .env File
 ```env
+# Vite prefixed variables (recommended)
 VITE_APP_NAME=Your App Name
 VITE_APP_VERSION=1.0.0
+
+# Or regular environment variables
+APP_NAME=Your App Name
+APP_VERSION=1.0.0
 ```
 
-Note: In browser environments, the package will use these environment variables instead of trying to read package.json. Make sure to set these variables to avoid seeing "Unknown App" in the output.
+#### 3. Using package.json
+The package will automatically read from your package.json if available:
+```json
+{
+  "name": "your-app-name",
+  "version": "1.0.0"
+}
+```
+
+Note: In browser environments, Vite prefixed variables (`VITE_APP_NAME`, `VITE_APP_VERSION`) take precedence over regular environment variables (`APP_NAME`, `APP_VERSION`). Make sure to set these variables to avoid seeing "Unknown App" in the output.
 
 ## API
 

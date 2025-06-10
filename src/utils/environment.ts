@@ -86,10 +86,17 @@ export const getEnvironment = (): string => {
 export const getAppVersion = async (packageJsonPath?: string): Promise<string | undefined> => {
   // For browser environments, try to get from import.meta.env (Vite) or process.env (Create React App)
   if (typeof window !== 'undefined') {
-    if (hasImportMeta() && import.meta.env?.APP_VERSION) {
-      return import.meta.env.APP_VERSION;
+    if (hasImportMeta()) {
+      // Prioritize VITE_ prefixed variables
+      if (import.meta.env?.VITE_APP_VERSION) {
+        return import.meta.env.VITE_APP_VERSION;
+      }
+      if (import.meta.env?.APP_VERSION) {
+        return import.meta.env.APP_VERSION;
+      }
     }
-    return process.env?.APP_VERSION;
+    // Check process.env with VITE_ prefix first
+    return process.env?.VITE_APP_VERSION || process.env?.APP_VERSION;
   }
 
   // For Node.js environment, try package.json first
@@ -98,17 +105,24 @@ export const getAppVersion = async (packageJsonPath?: string): Promise<string | 
     return packageInfo.version;
   }
 
-  // Fall back to environment variables
-  return process.env.APP_VERSION;
+  // Fall back to environment variables, prioritizing VITE_ prefix
+  return process.env.VITE_APP_VERSION || process.env.APP_VERSION;
 };
 
 export const getAppName = async (packageJsonPath?: string): Promise<string | undefined> => {
   // For browser environments, try to get from import.meta.env (Vite) or process.env (Create React App)
   if (typeof window !== 'undefined') {
-    if (hasImportMeta() && import.meta.env?.APP_NAME) {
-      return import.meta.env.APP_NAME;
+    if (hasImportMeta()) {
+      // Prioritize VITE_ prefixed variables
+      if (import.meta.env?.VITE_APP_NAME) {
+        return import.meta.env.VITE_APP_NAME;
+      }
+      if (import.meta.env?.APP_NAME) {
+        return import.meta.env.APP_NAME;
+      }
     }
-    return process.env?.APP_NAME;
+    // Check process.env with VITE_ prefix first
+    return process.env?.VITE_APP_NAME || process.env?.APP_NAME;
   }
 
   // For Node.js environment, try package.json first
@@ -117,8 +131,8 @@ export const getAppName = async (packageJsonPath?: string): Promise<string | und
     return packageInfo.name;
   }
 
-  // Fall back to environment variables
-  return process.env.APP_NAME;
+  // Fall back to environment variables, prioritizing VITE_ prefix
+  return process.env.VITE_APP_NAME || process.env.APP_NAME;
 };
 
 export const getCurrentWorkingDirectory = (): string => {
