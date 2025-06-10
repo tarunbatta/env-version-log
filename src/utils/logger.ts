@@ -51,12 +51,14 @@ export class Logger {
     const envEmoji = info.environment === 'production' ? '🚀' : '🔧';
     const timestamp = new Date(info.lastUpdated || new Date()).toLocaleString();
 
-    console.log('\n📦 Application Information:');
-    console.log('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
-    console.log(`📋 App Name: ${info.appName || 'N/A'}`);
-    console.log(`${envEmoji} Environment: ${info.environment}`);
-    console.log(`🔢 Version: ${info.version || 'N/A'}`);
-    console.log(`⏰ Last Updated: ${timestamp}`);
-    console.log('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n');
+    console.log(`
+📦 Application Information:
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+📋 App Name: ${info.appName || 'N/A'}
+${envEmoji} Environment: ${info.environment}
+🔢 Version: ${info.version || 'N/A'}
+⏰ Last Updated: ${timestamp}
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+`);
   }
 }
