@@ -2,6 +2,7 @@ import * as fs from 'fs';
 import * as path from 'path';
 import { Logger } from './logger';
 import { PackageJson } from '../types/packagejson';
+import { getCurrentWorkingDirectory } from './environment';
 import {
   PackageJsonNotFoundError,
   PackageJsonReadError,
@@ -17,7 +18,7 @@ export class FileOperations {
    * Throws PackageJsonNotFoundError if not found.
    */
   public static findPackageJson(): string {
-    let currentDir = process.cwd();
+    let currentDir = getCurrentWorkingDirectory();
     // Traverse up the directory tree until the root is reached
     while (currentDir !== path.parse(currentDir).root) {
       const packageJsonPath = path.join(currentDir, 'package.json');

@@ -1,5 +1,6 @@
 import { VersionInfo } from './types/versioninfo';
 import { Logger } from './utils/logger';
+import { getEnvironment, getAppVersion, getBuildNumber } from './utils/environment';
 
 /**
  * Main class for version and build tracking
@@ -13,7 +14,7 @@ export class VersionTracker {
       appName: config.appName || 'Unknown App',
       version: config.version || '0.0.0',
       buildNumber: config.buildNumber || '1',
-      environment: process.env.NODE_ENV || config.environment || 'development',
+      environment: getEnvironment() || config.environment || 'development',
       lastUpdated: new Date().toISOString(),
     };
   }
@@ -67,9 +68,9 @@ export class VersionTracker {
    * Checks for version updates in env
    */
   public async checkForUpdates(): Promise<boolean> {
-    const versionFromEnv = process.env.APP_VERSION;
-    const buildNumberFromEnv = process.env.BUILD_NUMBER;
-    const environmentFromEnv = process.env.NODE_ENV;
+    const versionFromEnv = getAppVersion();
+    const buildNumberFromEnv = getBuildNumber();
+    const environmentFromEnv = getEnvironment();
 
     let hasUpdates = false;
 
