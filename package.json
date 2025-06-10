@@ -29,13 +29,14 @@
   ],
   "scripts": {
     "clean": "rimraf dist",
-    "build": "rollup -c",
+    "build": "npm install && npm run lint && rollup -c",
     "test": "jest",
     "lint": "eslint src",
     "format": "prettier --write \"src/**/*.ts\"",
     "prepare": "husky",
     "postinstall": "husky install",
-    "publish": "npm install && npm run lint && npm run build && npm publish"
+    "version-patch": "npm version patch",
+    "publish": "npm publish"
   },
   "lint-staged": {
     "*.ts": [
