@@ -65,45 +65,96 @@ The package automatically detects:
 
 You can override the automatic detection using environment variables. The package checks for variables in the following order:
 
-1. Vite environment variables (VITE_ prefixed)
-2. Regular environment variables (non-VITE_ prefixed)
-3. Default values
+### App Name
+1. `name` in package.json
+2. `APP_NAME` in env file
+3. Default: "Unknown App"
+
+### App Version
+1. `version` in package.json
+2. `APP_VERSION` in env file
+3. Default: "0.0.0"
+
+### Environment
+1. `NODE_ENV` in env file
+2. `import.meta.env.NODE_ENV` (Vite)
+3. Default: "development"
 
 ### Configuration Options
 
-#### 1. Using Vite Config
-```typescript
-import { defineConfig } from 'vite';
-
-export default defineConfig({
-  define: {
-    'import.meta.env.VITE_APP_NAME': JSON.stringify('Your App Name'),
-    'import.meta.env.VITE_APP_VERSION': JSON.stringify('1.0.0')
-  }
-});
-```
-
-#### 2. Using .env File
-```env
-# Vite prefixed variables (recommended)
-VITE_APP_NAME=Your App Name
-VITE_APP_VERSION=1.0.0
-
-# Or regular environment variables
-APP_NAME=Your App Name
-APP_VERSION=1.0.0
-```
-
-#### 3. Using package.json
-The package will automatically read from your package.json if available:
+#### 1. Using package.json
 ```json
 {
-  "name": "your-app-name",
+  "name": "my-app",
   "version": "1.0.0"
 }
 ```
 
-Note: In browser environments, Vite prefixed variables (`VITE_APP_NAME`, `VITE_APP_VERSION`) take precedence over regular environment variables (`APP_NAME`, `APP_VERSION`). Make sure to set these variables to avoid seeing "Unknown App" in the output.
+#### 2. Using .env File
+```env
+APP_NAME=my-app
+APP_VERSION=1.0.0
+NODE_ENV=development
+```
+
+#### 3. Using Vite Config
+```typescript
+// vite.config.ts
+import { defineConfig } from 'vite';
+import pkg from './package.json';
+
+export default defineConfig({
+  define: {
+    'import.meta.env.NODE_ENV': JSON.stringify(process.env.NODE_ENV || 'development'),
+  },
+});
+```
+
+> **Note**: The package will first try to read from package.json, then fall back to environment variables if package.json is not available or doesn't contain the required values.
+
+## Browser Environment Setup
+
+For browser environments (like React/Vite apps), you must use one of these methods:
+
+1. **Vite Config (Recommended)**
+   ```typescript
+   // vite.config.ts
+   import { defineConfig } from 'vite';
+   import pkg from './package.json';
+
+   export default defineConfig({
+     define: {
+       'import.meta.env.VITE_APP_NAME': JSON.stringify(pkg.name),
+       'import.meta.env.VITE_APP_VERSION': JSON.stringify(pkg.version),
+     },
+   });
+   ```
+
+2. **.env File**
+   ```env
+   VITE_APP_NAME=my-app
+   VITE_APP_VERSION=1.0.0
+   ```
+
+Then initialize the tracker without specifying `packageJsonPath`:
+```typescript
+// Initialize version tracker
+const initVersionTracker = async () => {
+  const tracker = await VersionTracker.initialize();
+  tracker.logVersionInfo();
+};
+```
+
+> **Note**: In browser environments, the package will use environment variables instead of trying to read `package.json`. The `packageJsonPath` option is only used in Node.js environments.
+
+### Debugging
+
+If you're seeing "Unknown App" or "0.0.0" version, check your browser's console for debug messages. The package will log:
+- Whether it's running in a browser environment
+- Available environment variables
+- Values found in `import.meta.env`
+
+This will help you identify why the values aren't being picked up correctly.
 
 ## API
 
