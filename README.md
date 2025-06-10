@@ -72,6 +72,30 @@ APP_VERSION=1.0.0     # Optional: Override version
 APP_NAME=my-app       # Optional: Override app name
 ```
 
+### Vite Configuration
+
+For Vite projects, you need to define environment variables to provide the app name and version. You can do this in two ways:
+
+1. In your `vite.config.ts`:
+```typescript
+import { defineConfig } from 'vite';
+
+export default defineConfig({
+  define: {
+    'import.meta.env.APP_NAME': JSON.stringify('Your App Name'),
+    'import.meta.env.APP_VERSION': JSON.stringify('1.0.0')
+  }
+});
+```
+
+2. Or using a `.env` file with the `VITE_` prefix:
+```env
+VITE_APP_NAME=Your App Name
+VITE_APP_VERSION=1.0.0
+```
+
+Note: In browser environments, the package will use these environment variables instead of trying to read package.json. Make sure to set these variables to avoid seeing "Unknown App" in the output.
+
 ## API
 
 ### VersionTracker.initialize(config?: Partial<VersionInfo> & { packageJsonPath?: string })

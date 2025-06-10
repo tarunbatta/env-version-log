@@ -14,6 +14,11 @@ const hasImportMeta = (): boolean => {
 const readPackageJson = async (
   packageJsonPath: string = '../../package.json'
 ): Promise<{ name?: string; version?: string }> => {
+  // Skip package.json reading in browser environment
+  if (typeof window !== 'undefined') {
+    return {};
+  }
+
   try {
     const packageJson = await import(packageJsonPath, { assert: { type: 'json' } });
     return {
@@ -79,39 +84,41 @@ export const getEnvironment = (): string => {
 };
 
 export const getAppVersion = async (packageJsonPath?: string): Promise<string | undefined> => {
-  // Try to get from package.json first
+  // For browser environments, try to get from import.meta.env (Vite) or process.env (Create React App)
+  if (typeof window !== 'undefined') {
+    if (hasImportMeta() && import.meta.env?.APP_VERSION) {
+      return import.meta.env.APP_VERSION;
+    }
+    return process.env?.APP_VERSION;
+  }
+
+  // For Node.js environment, try package.json first
   const packageInfo = await readPackageJson(packageJsonPath);
   if (packageInfo.version) {
     return packageInfo.version;
   }
 
   // Fall back to environment variables
-  if (isNode) {
-    return process.env.APP_VERSION;
-  }
-  // For browser environments, try to get from import.meta.env (Vite) or process.env (Create React App)
-  if (hasImportMeta() && import.meta.env?.APP_VERSION) {
-    return import.meta.env.APP_VERSION;
-  }
-  return process.env?.APP_VERSION;
+  return process.env.APP_VERSION;
 };
 
 export const getAppName = async (packageJsonPath?: string): Promise<string | undefined> => {
-  // Try to get from package.json first
+  // For browser environments, try to get from import.meta.env (Vite) or process.env (Create React App)
+  if (typeof window !== 'undefined') {
+    if (hasImportMeta() && import.meta.env?.APP_NAME) {
+      return import.meta.env.APP_NAME;
+    }
+    return process.env?.APP_NAME;
+  }
+
+  // For Node.js environment, try package.json first
   const packageInfo = await readPackageJson(packageJsonPath);
   if (packageInfo.name) {
     return packageInfo.name;
   }
 
   // Fall back to environment variables
-  if (isNode) {
-    return process.env.APP_NAME;
-  }
-  // For browser environments, try to get from import.meta.env (Vite) or process.env (Create React App)
-  if (hasImportMeta() && import.meta.env?.APP_NAME) {
-    return import.meta.env.APP_NAME;
-  }
-  return process.env?.APP_NAME;
+  return process.env.APP_NAME;
 };
 
 export const getCurrentWorkingDirectory = (): string => {
