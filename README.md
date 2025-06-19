@@ -253,7 +253,7 @@ Contributions are welcome! Please feel free to submit a Pull Request.
 
 ## License
 
-MIT © [Tarun Batta](https://www.linkedin.com/in/tarunbatta/)
+MIT © [BattaTech](https://battatech.com/)
 
 ## Support
 
