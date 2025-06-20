@@ -2,28 +2,48 @@ version: 2
 updates:
   # Enable version updates for npm
   - package-ecosystem: 'npm'
-    # Look for `package.json` and `lock` files in the `root` directory
     directory: '/'
-    # Check for updates once a week
     schedule:
       interval: 'weekly'
-    # Specify labels for pull requests
+      day: 'monday'
+      time: '09:00'
+    open-pull-requests-limit: 10
+    reviewers:
+      - 'tarunbatta'
+    assignees:
+      - 'tarunbatta'
+    commit-message:
+      prefix: 'deps'
+      include: 'scope'
     labels:
       - 'dependencies'
-      - 'npm'
-    # Set version update strategy
-    versioning-strategy: auto
-    # Limit the number of open pull requests
-    open-pull-requests-limit: 10
-    # Group all updates together
-    groups:
-      dependencies:
-        patterns:
-          - '*'
-    # Allow up-to-date branches to be rebased
-    rebase-strategy: auto
-    # Specify the version update behavior
+      - 'automated'
     ignore:
-      # Ignore major version updates
-      - dependency-name: '*'
+      # Ignore major version updates for React to avoid breaking changes
+      - dependency-name: 'react'
         update-types: ['version-update:semver-major']
+      - dependency-name: 'react-dom'
+        update-types: ['version-update:semver-major']
+      - dependency-name: '@types/react'
+        update-types: ['version-update:semver-major']
+      - dependency-name: '@types/react-dom'
+        update-types: ['version-update:semver-major']
+
+  # Enable version updates for GitHub Actions
+  - package-ecosystem: 'github-actions'
+    directory: '/'
+    schedule:
+      interval: 'weekly'
+      day: 'monday'
+      time: '09:00'
+    open-pull-requests-limit: 5
+    reviewers:
+      - 'tarunbatta'
+    assignees:
+      - 'tarunbatta'
+    commit-message:
+      prefix: 'ci'
+      include: 'scope'
+    labels:
+      - 'github-actions'
+      - 'automated'
