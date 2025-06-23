@@ -8,7 +8,7 @@ on:
   workflow_dispatch:
     inputs:
       pr_number:
-        description: "PR number to auto-merge (optional, will process all Dependabot PRs if not specified)"
+        description: 'PR number to auto-merge (optional, will process all Dependabot PRs if not specified)'
         required: false
         type: string
 
@@ -17,6 +17,10 @@ jobs:
     # Only run on Dependabot PRs or manual trigger
     if: github.actor == 'dependabot[bot]' || github.event_name == 'workflow_dispatch'
     runs-on: ubuntu-latest
+    permissions:
+      contents: write
+      pull-requests: write
+      issues: write
 
     steps:
       - name: Checkout code
@@ -25,7 +29,15 @@ jobs:
       - name: Setup Node.js
         uses: actions/setup-node@v4
         with:
-          node-version: "18"
+          node-version: '18'
+
+      - name: Configure GitHub CLI
+        run: |
+          # Configure GitHub CLI to use the token
+          echo "${{ secrets.GITHUB_TOKEN }}" | gh auth login --with-token
+          gh auth status
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
       - name: Make script executable
         run: chmod +x .github/scripts/process_pr.sh
@@ -172,10 +184,32 @@ jobs:
       - name: Comment on PR
         if: always() && github.actor == 'dependabot[bot]'
         run: |
+          # Test GitHub CLI authentication first
+          echo "Testing GitHub CLI authentication..."
+          gh auth status || {
+            echo "GitHub CLI authentication failed"
+            exit 1
+          }
+
+          # Get PR number safely
+          PR_NUMBER="${{ github.event.pull_request.number }}"
+          if [ -z "$PR_NUMBER" ]; then
+            echo "No PR number found, skipping comment"
+            exit 0
+          fi
+
+          echo "Attempting to comment on PR #$PR_NUMBER"
+
           if [ "${{ job.status }}" = "success" ]; then
-            gh pr comment "${{ github.event.pull_request.number }}" --body "🤖 Auto-merge enabled! This PR will be automatically merged once all checks pass."
+            echo "Job succeeded, adding success comment..."
+            gh pr comment "$PR_NUMBER" --body "🤖 Auto-merge enabled! This PR will be automatically merged once all checks pass." || {
+              echo "Failed to add success comment, but continuing..."
+            }
           else
-            gh pr comment "${{ github.event.pull_request.number }}" --body "🤖 Auto-merge failed. Please review manually."
+            echo "Job failed, adding failure comment..."
+            gh pr comment "$PR_NUMBER" --body "🤖 Auto-merge failed. Please review manually." || {
+              echo "Failed to add failure comment, but continuing..."
+            }
           fi
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
