@@ -7,7 +7,8 @@ updates:
       interval: 'monthly'
       day: 'sunday'
       time: '09:00'
-    open-pull-requests-limit: 10
+    # Paused: set open-pull-requests-limit to 0 to disable version bump PRs
+    open-pull-requests-limit: 0
     reviewers:
       - 'tarunbatta'
     assignees:
@@ -36,7 +37,8 @@ updates:
       interval: 'weekly'
       day: 'monday'
       time: '09:00'
-    open-pull-requests-limit: 5
+    # Paused: set open-pull-requests-limit to 0 to disable version bump PRs
+    open-pull-requests-limit: 0
     reviewers:
       - 'tarunbatta'
     assignees:
